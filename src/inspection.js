@@ -1,6 +1,7 @@
 import './inspection.css';
 import { loadViewerSession, saveViewerSession } from './viewer-state.js';
 import { decodeReport, encodeReport, escapeHTML, freshReport, loadPlacements, savePlacement, storageAvailable, validateReport } from './state.js';
+import { ROOM_PRESETS, roomForPreset, matchRoomPreset } from './room-presets.js';
 
 const conditions = [
   { id: 'scratch', title: 'Goresan pintu kiri', location: 'Permukaan depan', size: 'Panjang 11 cm', image: '/images/wear-scratch.webp', note: 'Goresan tipis terlihat pada pintu kiri. Pilih titik 1 untuk melihat letaknya.' },
@@ -10,30 +11,27 @@ const conditions = [
 const snapshots = new Map();
 const roomReports = new Map();
 const ROOM_REPORT_KEY = 'lihatdulu:inspection:room-report:v1';
-const guideSteps = [
-  { phase: 'prepare', title: 'Siapkan barang', note: 'Letakkan barang di tempat terang. Sisakan ruang untuk bergerak mengelilinginya.' },
-  { phase: 'exterior', title: 'Foto bagian luar', note: 'Ambil foto depan, sisi, belakang, dan bagian atas. Pastikan seluruh tepi barang masuk ke foto.' },
-  { phase: 'interior', title: 'Foto bagian dalam', note: 'Buka pintu dan laci, lalu foto bagian dalam. Tambahkan foto dekat untuk setiap goresan atau kerusakan.' },
-  { phase: 'review', title: 'Periksa hasil foto', note: 'Pastikan foto terang dan tajam. Sertakan bagian bawah, ukuran barang, dan catatan kondisi.' },
-];
 const button = (label, action, extra = '') => `<button type="button" class="inspection-button" data-inspection-action="${action}" ${extra}>${label}</button>`;
-const motionControls = () => `<div class="inspection-motion"><div class="inspection-section-heading"><h3>Pintu & laci</h3><div class="inspection-inline-actions">${button('Buka semua', 'open', 'data-engine-control disabled')}${button('Tutup semua', 'close', 'data-engine-control disabled')}</div></div>${[['left', 'Pintu kiri', 100, '°', 1], ['right', 'Pintu kanan', 100, '°', 1], ['drawer', 'Laci', 30, ' cm', 1]].map(([id, name, max, unit, step]) => `<label class="inspection-slider"><span>${name}<output data-motion-output="${id}">0${unit}</output></span><input type="range" min="0" max="${max}" step="${step}" value="0" data-motion="${id}" aria-label="${name}, ${id === 'drawer' ? 'sentimeter' : 'derajat'}" data-engine-control disabled></label>`).join('')}</div>`;
-const evidence = () => `<aside class="inspection-evidence" data-inspection-pane><div class="inspection-section-heading"><h3>Detail kondisi</h3><span class="inspection-count">3 detail</span></div><p class="inspection-help">Pilih foto atau titik pada barang.</p><div class="inspection-condition-list">${conditions.map((c, i) => `<button type="button" class="inspection-condition" data-condition="${c.id}" aria-pressed="false"><img src="${c.image}" alt="" width="72" height="56"><span><strong>${c.title}</strong><small>${c.location}</small></span><b aria-hidden="true">${i + 1}</b></button>`).join('')}</div><div class="inspection-detail" data-inspection-detail tabindex="-1"><img src="/images/wear-scratch.webp" alt="Goresan tipis pada permukaan pintu kiri" width="560" height="420"><h4>Goresan pintu kiri</h4><p>Goresan tipis terlihat pada pintu kiri.</p><span>Panjang 11 cm</span></div></aside>`;
-const roomPane = () => `<aside class="inspection-room" data-inspection-pane><h3>Ukuran ruangan</h3><div class="inspection-fields">${[['width', 'Lebar', 3.2, 1.2, 10], ['depth', 'Panjang', 3, 1, 10]].map(([id, label, value, min, max]) => `<label>${label}<span class="inspection-input-unit"><input type="number" value="${value}" min="${min}" max="${max}" step="0.1" inputmode="decimal" data-room-field="${id}" aria-label="${label} ruangan dalam meter" data-engine-control disabled><span>m</span></span></label>`).join('')}</div><p class="inspection-validation" data-room-validation role="status"></p><div class="inspection-outcomes" aria-live="polite" aria-atomic="true"><div data-placement="body"><span>Badan furnitur</span><strong>Menunggu ukuran</strong></div><div data-placement="doors"><span>Bukaan pintu</span><strong>Menunggu ukuran</strong></div><div data-placement="drawer"><span>Bukaan laci</span><strong>Menunggu ukuran</strong></div></div><p class="inspection-help" data-placement-source>Berdasarkan ukuran ruangan dan barang: 90 × 47,5 × 120 cm.</p><h3>Posisi barang</h3><p class="inspection-help">Geser barang di ruang atau ubah posisi berikut.</p><div class="inspection-fields">${[['x', 'Kiri / kanan', 0], ['z', 'Depan / belakang', -.4]].map(([id, label, value]) => `<label>${label}<span class="inspection-input-unit"><input type="number" value="${value}" min="-10" max="10" step="0.1" inputmode="decimal" data-room-field="${id}" aria-label="Posisi ${label.toLowerCase()} dalam meter" data-engine-control disabled><span>m</span></span></label>`).join('')}</div><label class="inspection-rotation">Putaran<span class="inspection-input-unit"><input type="number" value="0" min="-180" max="180" step="15" data-room-field="rotation" aria-label="Putaran barang dalam derajat" data-engine-control disabled><span>°</span></span></label><div class="inspection-inline-actions">${button('Putar kiri', 'rotate-left', 'data-engine-control disabled')}${button('Putar kanan', 'rotate-right', 'data-engine-control disabled')}</div><label class="inspection-fixture">Periksa jarak bukaan<select data-room-fixture aria-label="Penghalang di ruangan" data-engine-control disabled><option value="clear">Tanpa penghalang</option><option value="door">Penghalang di depan pintu</option><option value="drawer">Penghalang di depan laci</option><option value="wall">Dekat dinding kanan</option></select></label><div class="inspection-inline-actions">${button('Urungkan', 'undo', 'data-inspection-undo disabled')}${button('Atur ulang ruang', 'reset-room', 'data-engine-control disabled')}</div><section class="inspection-saved-positions"><div class="inspection-section-heading"><h3>Posisi tersimpan</h3>${button('Simpan posisi', 'save-placement', 'data-engine-control disabled')}</div><label>Pilih posisi<select data-saved-placement disabled><option value="">Pilih posisi tersimpan</option></select></label><p class="inspection-help" data-saved-caption>Simpan posisi untuk dibuka kembali nanti.</p></section></aside>`;
-const guidePane = (direct = false) => `<aside class="inspection-guide" data-inspection-guide ${direct ? '' : 'hidden'}><div class="inspection-section-heading"><h3>Cara foto barang</h3>${direct ? '<a class="inspection-button" href="/barang/sora?tab=condition" data-nav>Lihat kondisi</a>' : button('Tutup', 'guide-close', 'aria-label="Tutup panduan foto"')}</div><p class="inspection-help">Ikuti panduan sudut foto saat memotret barangmu.</p><div class="inspection-guide-steps">${guideSteps.map((s, i) => `<button type="button" data-guide-step="${i}" class="inspection-guide-step" aria-pressed="${i === 0}" data-engine-control disabled><span>${i + 1}</span>${s.title}</button>`).join('')}</div><h4 data-guide-title>Siapkan barang</h4><p data-guide-note>${guideSteps[0].note}</p><label class="inspection-guide-area">Sudut foto<select data-guide-area disabled><option value="front">Depan</option><option value="left">Sisi kiri</option><option value="right">Sisi kanan</option><option value="rear">Belakang</option><option value="top">Bagian atas</option><option value="underside">Bagian bawah</option><option value="interior">Bagian dalam</option><option value="drawer">Laci</option><option value="scratch">Goresan</option></select></label><div class="inspection-inline-actions">${button('Sebelumnya', 'guide-prev', 'disabled')}${button('Berikutnya', 'guide-next', 'data-engine-control disabled')}</div><p class="inspection-help">Untuk menambahkan foto barangmu, buka Jual furnitur.</p></aside>`;
+const motionKinds = [['left', 'Pintu kiri', 100, '°'], ['right', 'Pintu kanan', 100, '°'], ['drawer', 'Laci', 30, ' cm']];
+const motionControls = () => `<div class="inspection-motion"><div class="inspection-motion-toggles" role="group" aria-label="Bukaan penyimpanan">${motionKinds.map(([id, name]) => `<button type="button" class="inspection-motion-toggle" data-motion-toggle="${id}" aria-label="Buka ${name.toLowerCase()}" aria-pressed="false" data-engine-control disabled><span>${name}</span><small data-motion-status="${id}">Tertutup</small><span class="inspection-toggle-icon" aria-hidden="true">+</span></button>`).join('')}</div><details class="inspection-precise"><summary>Atur bukaan</summary><div class="inspection-inline-actions">${button('Buka semua', 'open', 'data-engine-control disabled')}${button('Tutup semua', 'close', 'data-engine-control disabled')}</div>${motionKinds.map(([id, name, max, unit]) => `<label class="inspection-slider"><span>${name}<output data-motion-output="${id}">0${unit}</output></span><input type="range" min="0" max="${max}" step="1" value="0" data-motion="${id}" aria-label="${name}, ${id === 'drawer' ? 'sentimeter' : 'derajat'}" data-engine-control disabled></label>`).join('')}</details></div>`;
+const evidence = (expanded) => `<details class="inspection-evidence" data-inspection-pane data-condition-panel ${expanded ? 'open' : ''}><summary><span>Catatan kondisi</span><span class="inspection-count">3 detail</span></summary><div class="inspection-condition-list">${conditions.map((c, i) => `<button type="button" class="inspection-condition" data-condition="${c.id}" aria-pressed="false"><img src="${c.image}" alt="" width="72" height="56"><span><strong>${c.title}</strong><small>${c.location}</small></span><b aria-hidden="true">${i + 1}</b></button>`).join('')}</div><p class="inspection-help">Pilih catatan atau titik pada barang untuk melihat letaknya.</p><div class="inspection-detail" data-inspection-detail tabindex="-1" hidden></div></details>`;
+const cameraControls = () => `<details class="inspection-view-tools"><summary>Zoom & ukuran</summary><div class="inspection-camera-actions">${button('−', 'zoom-out', 'aria-label="Perkecil tampilan" data-engine-control disabled')}${button('+', 'zoom-in', 'aria-label="Perbesar tampilan" data-engine-control disabled')}${button('Ukuran', 'dimensions', 'aria-pressed="false" data-engine-control disabled')}${button('Atur ulang', 'reset', 'aria-label="Atur ulang tampilan dan bukaan" data-engine-control disabled')}</div></details>`;
+const roomPane = () => `<aside class="inspection-room" data-inspection-pane><div class="inspection-section-heading"><h3>Periksa jarak bukaan</h3><span class="inspection-count">3,2 × 3 m</span></div><div class="inspection-room-presets" role="group" aria-label="Pilihan ruang">${ROOM_PRESETS.map(preset => `<button type="button" class="inspection-room-preset" data-room-preset="${preset.id}" aria-pressed="false" data-engine-control disabled><strong>${preset.name}</strong><span>3,2 × 3 m</span><small>${preset.note}</small></button>`).join('')}</div><div class="inspection-outcomes" aria-live="polite" aria-atomic="true"><div data-placement="body"><span>Badan lemari</span><strong>Menunggu ukuran</strong></div><div data-placement="doors"><span>Bukaan pintu</span><strong>Menunggu ukuran</strong></div><div data-placement="drawer"><span>Bukaan laci</span><strong>Menunggu ukuran</strong></div></div><p class="inspection-help" data-placement-source>Berdasarkan ukuran ruangan dan barang: 90 × 47,5 × 120 cm.</p><div class="inspection-room-actions">${button('Simpan posisi', 'save-placement', 'data-engine-control disabled')}${button('Urungkan', 'undo', 'data-inspection-undo disabled')}${button('Atur ulang ruang', 'reset-room', 'data-engine-control disabled')}</div>${motionControls()}<details class="inspection-custom-room" data-room-custom><summary>Sesuaikan ukuran & posisi</summary><h3>Ukuran ruangan</h3><div class="inspection-fields">${[['width', 'Lebar', 3.2, 1.2, 10], ['depth', 'Panjang', 3, 1, 10]].map(([id, label, value, min, max]) => `<label>${label}<span class="inspection-input-unit"><input type="number" value="${value}" min="${min}" max="${max}" step="0.1" inputmode="decimal" data-room-field="${id}" aria-label="${label} ruangan dalam meter" data-engine-control disabled><span>m</span></span></label>`).join('')}</div><p class="inspection-validation" data-room-validation role="status"></p><h3>Posisi barang</h3><p class="inspection-help">Geser lemari di ruang atau ubah posisi berikut.</p><div class="inspection-fields">${[['x', 'Kiri / kanan', 0], ['z', 'Depan / belakang', -.4]].map(([id, label, value]) => `<label>${label}<span class="inspection-input-unit"><input type="number" value="${value}" min="-10" max="10" step="0.1" inputmode="decimal" data-room-field="${id}" aria-label="Posisi ${label.toLowerCase()} dalam meter" data-engine-control disabled><span>m</span></span></label>`).join('')}</div><label class="inspection-rotation">Putaran<span class="inspection-input-unit"><input type="number" value="0" min="-180" max="180" step="15" data-room-field="rotation" aria-label="Putaran barang dalam derajat" data-engine-control disabled><span>°</span></span></label><div class="inspection-inline-actions">${button('Putar kiri', 'rotate-left', 'data-engine-control disabled')}${button('Putar kanan', 'rotate-right', 'data-engine-control disabled')}</div><label class="inspection-fixture">Penghalang di ruang<select data-room-fixture aria-label="Penghalang di ruangan" data-engine-control disabled><option value="clear">Tanpa penghalang</option><option value="door">Di depan pintu</option><option value="drawer">Di depan laci</option><option value="wall">Dekat dinding kanan</option></select></label></details><details class="inspection-saved-positions" data-saved-details><summary>Posisi tersimpan</summary><label>Pilih posisi<select data-saved-placement disabled><option value="">Pilih posisi tersimpan</option></select></label><p class="inspection-help" data-saved-caption>Simpan posisi untuk dibuka kembali nanti.</p></details></aside>`;
 
-export function renderInspection(mode = 'condition') {
+export function renderInspection(mode = 'model') {
+  mode = ['model', 'condition', 'room'].includes(mode) ? mode : 'model';
   const room = mode === 'room';
-  const directGuide = mode === 'guide';
-  return `<section class="inspection${directGuide ? ' inspection-guiding' : ''}" data-inspection-mode="${mode}" aria-label="${directGuide ? 'Panduan foto furnitur' : room ? 'Coba furnitur di ruangan' : 'Periksa kondisi furnitur'}"><div class="inspection-heading"><div><h2>${directGuide ? 'Foto yang membantu pembeli' : room ? 'Coba di ruangmu' : 'Kenali setiap detail'}</h2><p>${directGuide ? 'Lihat sudut foto yang perlu disiapkan sebelum menjual furnitur.' : room ? 'Masukkan ukuran, lalu periksa ruang untuk pintu dan laci.' : 'Putar barang, buka penyimpanannya, dan lihat kondisi lebih dekat.'}</p></div>${button('Cara foto barang', 'guide', 'data-engine-control disabled')}</div><div class="inspection-layout"><div class="inspection-main"><div class="inspection-stage" data-inspection-stage aria-busy="true" tabindex="0" aria-label="Tampilan 3D lemari Sora. Gunakan tombol di bawah untuk mengubah tampilan."><img class="inspection-poster" src="/images/cabinet-closed.webp" alt="Lemari Sora dengan dua pintu dan satu laci" width="1000" height="1000"><div class="inspection-loading" role="status"><span class="inspection-loading-dot" aria-hidden="true"></span><p data-loading-label>Menyiapkan tampilan 3D…</p><progress max="1" value="0" aria-label="Memuat tampilan 3D"></progress></div><div class="inspection-error" hidden><strong>Tampilan 3D belum tersedia</strong><p>Foto dan detail kondisi tetap dapat dilihat. Coba muat kembali.</p>${button('Coba lagi', 'retry')}</div></div><div class="inspection-toolbar" aria-label="Kontrol tampilan"><div class="inspection-view-actions">${room ? button('Lihat ruang', 'room-view', 'data-engine-control disabled') : [['front', 'Depan'], ['rear', 'Belakang'], ['top', 'Atas']].map(([id, label]) => button(label, 'view', `data-view="${id}" data-engine-control disabled aria-pressed="false"`)).join('')}${room ? '' : button('Lihat foto detail', 'detail', 'data-inspection-detail-jump hidden')}</div><div class="inspection-camera-actions">${button('−', 'zoom-out', 'aria-label="Perkecil tampilan" data-engine-control disabled')}${button('+', 'zoom-in', 'aria-label="Perbesar tampilan" data-engine-control disabled')}${button('Ukuran', 'dimensions', 'aria-pressed="false" data-engine-control disabled')}${button('Atur ulang', 'reset', 'aria-label="Atur ulang tampilan dan bukaan" data-engine-control disabled')}</div></div><p class="inspection-canvas-help">${room ? 'Geser barang untuk memindahkan. Geser ruang untuk melihat dari sudut lain.' : 'Geser untuk memutar. Cubit atau gunakan tombol + dan − untuk memperbesar.'}</p>${motionControls()}</div>${directGuide ? evidence().replace('data-inspection-pane', 'data-inspection-pane hidden') : room ? roomPane() : evidence()}${guidePane(directGuide)}</div></section>`;
+  return `<section class="inspection" data-inspection-mode="${mode}" aria-label="${room ? 'Coba lemari di ruangan' : 'Periksa lemari Sora'}"><div class="inspection-layout"><div class="inspection-main"><div class="inspection-stage" data-inspection-stage aria-busy="true" tabindex="0" aria-label="Tampilan 3D lemari Sora. Gunakan tombol di bawah untuk mengubah tampilan."><img class="inspection-poster" src="/images/cabinet-closed.webp" alt="Lemari Sora dengan dua pintu dan satu laci" width="1000" height="1000"><span class="inspection-stage-label" aria-hidden="true">${room ? 'Coba di ruang' : 'Putar 3D'}</span><div class="inspection-loading" role="status"><span class="inspection-loading-dot" aria-hidden="true"></span><p data-loading-label>Menyiapkan tampilan 3D…</p><progress max="1" value="0" aria-label="Memuat tampilan 3D"></progress></div><div class="inspection-error" hidden><strong>Tampilan 3D belum tersedia</strong><p>Foto ${room ? 'lemari tetap tersedia. Hasil kecocokan akan muncul setelah tampilan 3D terbuka.' : 'dan catatan kondisi tetap dapat dilihat.'} Coba muat kembali.</p>${button('Coba lagi', 'retry')}</div></div><div class="inspection-toolbar" aria-label="Kontrol tampilan">${room ? `<div class="inspection-room-view">${button('Lihat seluruh ruang', 'room-view', 'data-engine-control disabled')}${cameraControls()}</div>` : `<div class="inspection-view-actions" role="group" aria-label="Sudut pandang">${[['front', 'Depan'], ['left', 'Kiri'], ['rear', 'Belakang'], ['top', 'Atas'], ['interior', 'Dalam']].map(([id, label]) => button(label, 'view', `data-view="${id}" aria-label="Lihat ${id === 'interior' ? 'bagian dalam' : id === 'left' ? 'sisi kiri' : label.toLowerCase()}" data-engine-control disabled aria-pressed="false"`)).join('')}</div>${button('Lihat foto detail', 'detail', 'data-inspection-detail-jump hidden')}`}</div><p class="inspection-canvas-help">${room ? 'Geser lemari untuk memindahkan. Geser ruang untuk melihat sudut lain.' : 'Geser ke samping untuk memutar. Cubit untuk memperbesar.'}</p>${room ? '' : `${motionControls()}${cameraControls()}`}</div>${room ? roomPane() : evidence(mode === 'condition')}</div></section>`;
 }
 
-export async function mountInspection(root, { mode = 'condition', onToast = () => {}, report = null } = {}) {
+export function mountInspection(root, { mode = 'model', onToast = () => {}, report = null } = {}) {
+  mode = ['model', 'condition', 'room'].includes(mode) ? mode : 'model';
   const host = root.querySelector('.inspection');
   if (!host) return () => {};
+  host._engine = null;
   const stage = host.querySelector('[data-inspection-stage]');
   const controller = new AbortController();
-  let disposed = false, engine = null, loading = false, selected = null, guide = false, guideStep = 0, guideSnapshot = null, lastRoom = null, lastFit = null, undoing = false, persistTimer = null;
+  let disposed = false, engine = null, loading = false, selected = null, lastRoom = null, lastFit = null, undoing = false, persistTimer = null;
   const viewerKey = `inspection-sora-${mode}`;
   const defaultReport = { ...freshReport(), schema: 2, dimensionsConfirmed: true, conditionNotes: conditions.map(({ id, note }) => ({ id, note })) };
   let suppliedReport = defaultReport, suppliedReportValid = !report;
@@ -49,10 +47,11 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
   const q = selector => host.querySelector(selector);
   const qa = selector => [...host.querySelectorAll(selector)];
   const setPressed = (selector, key, value) => qa(selector).forEach(el => el.setAttribute('aria-pressed', String(el.dataset[key] === value)));
-  if (mode === 'guide') {
-    const returnLink = q('.inspection-guide a');
-    if (returnLink) returnLink.setAttribute('href', `/barang/sora?tab=condition${location.hash}`);
+  const conditionPanel = q('[data-condition-panel]');
+  function syncMarkers() {
+    if (engine && conditionPanel) engine.setMarkersVisible(Boolean(conditionPanel.open));
   }
+  conditionPanel?.addEventListener('toggle', syncMarkers, { signal: controller.signal });
   function showCondition(id) {
     selected = conditions.some(c => c.id === id) ? id : null;
     setPressed('[data-condition]', 'condition', selected);
@@ -61,13 +60,23 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
     const jump = q('[data-inspection-detail-jump]');
     if (jump) jump.hidden = !selected;
     const note = suppliedReport.conditionNotes?.find(entry => entry.id === c.id)?.note ?? c.note;
-    if (detail) detail.innerHTML = `<img src="${c.image}" alt="${c.title}, ${c.location.toLowerCase()}" width="560" height="420"><h4>${c.title}</h4><p>${escapeHTML(note)}</p><span>${c.size}</span>${button('Kembali ke barang', 'return-stage', 'data-inspection-return-stage')}`;
-    if (selected && engine) { engine.setDimensionsVisible(false); q('[data-inspection-action="dimensions"]').setAttribute('aria-pressed', 'false'); }
+    if (selected) q('[data-condition-panel]').open = true;
+    syncMarkers();
+    if (detail) { detail.hidden = !selected; detail.innerHTML = `<img src="${c.image}" alt="${c.title}, ${c.location.toLowerCase()}" width="560" height="420"><h4>${c.title}</h4><p>${escapeHTML(note)}</p><span>${c.size}</span>${button('Kembali ke barang', 'return-stage', 'data-inspection-return-stage')}`; }
+    if (selected && engine) { engine.setDimensionsVisible(false); q('[data-inspection-action="dimensions"]').setAttribute('aria-pressed', 'false'); setPressed('[data-view]', 'view', null); }
   }
   function syncMotions() {
     if (!engine) return;
     const { motions } = engine.getState();
     qa('[data-motion]').forEach(el => { const value = el.dataset.motion === 'drawer' ? Math.round(motions.drawer * 100) : Math.round(motions[el.dataset.motion]); el.value = value; q(`[data-motion-output="${el.dataset.motion}"]`).textContent = `${value}${el.dataset.motion === 'drawer' ? ' cm' : '°'}`; });
+    qa('[data-motion-toggle]').forEach(el => {
+      const id = el.dataset.motionToggle, open = motions[id] > 0;
+      const name = motionKinds.find(([kind]) => kind === id)[1];
+      el.setAttribute('aria-pressed', String(open));
+      el.setAttribute('aria-label', `${open ? 'Tutup' : 'Buka'} ${name.toLowerCase()}`);
+      q(`[data-motion-status="${id}"]`).textContent = open ? 'Terbuka' : 'Tertutup';
+      el.querySelector('.inspection-toggle-icon').textContent = open ? '−' : '+';
+    });
   }
   function placement({ state, result }) {
     if (!alive() || !roomMode) return;
@@ -77,6 +86,7 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
     lastFit = { closedFits: result.closedFits, doorsClear: result.doorsClear, drawerClear: result.drawerClear };
     qa('[data-room-field]').forEach(el => { if (document.activeElement !== el) el.value = state[el.dataset.roomField]; });
     q('[data-room-fixture]').value = state.fixture;
+    setPressed('[data-room-preset]', 'roomPreset', matchRoomPreset(state));
     q('[data-inspection-undo]').disabled = !history.length;
     const savedIndex = savedPlacements.findIndex(value => JSON.stringify(value.room) === JSON.stringify(state) && (value.report.dimensionsConfirmed === true) === dimensionsConfirmed);
     const positionSelect = q('[data-saved-placement]');
@@ -93,33 +103,16 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
     const invalid = inputs.find(el => el.value.trim() === '' || !el.validity.valid || !Number.isFinite(Number(el.value)));
     inputs.forEach(el => el.setAttribute('aria-invalid', String(el === invalid)));
     q('[data-room-validation]').textContent = invalid ? `Isi ${invalid.closest('label').childNodes[0].textContent.toLowerCase()} antara ${invalid.min} dan ${invalid.max}.` : '';
-    if (invalid) qa('[data-placement]').forEach(el => { delete el.dataset.clear; el.querySelector('strong').textContent = 'Periksa ukuran dan posisi'; });
+    if (invalid) { q('[data-room-custom]').open = true; qa('[data-placement]').forEach(el => { delete el.dataset.clear; el.querySelector('strong').textContent = 'Periksa ukuran dan posisi'; }); }
     return invalid ? null : Object.fromEntries(inputs.map(el => [el.dataset.roomField, Number(el.value)]));
   }
-  function updateGuide() {
-    const step = guideSteps[guideStep];
-    qa('[data-guide-step]').forEach(el => el.setAttribute('aria-pressed', String(Number(el.dataset.guideStep) === guideStep)));
-    q('[data-guide-title]').textContent = step.title; q('[data-guide-note]').textContent = step.note;
-    q('[data-inspection-action="guide-prev"]').disabled = guideStep === 0;
-    q('[data-inspection-action="guide-next"]').disabled = guideStep === guideSteps.length - 1;
-    const select = q('[data-guide-area]');
-    select.disabled = guideStep === 0 || guideStep === 3;
-    engine.setCaptureScene({ phase: step.phase, area: select.value, progress: guideStep / 3 });
-  }
-  function goGuideStep(next) {
-    guideStep = Math.max(0, Math.min(guideSteps.length - 1, next));
-    q('[data-guide-area]').value = guideStep === 2 ? 'interior' : 'front';
-    updateGuide();
-  }
-  function closeGuide() {
-    if (!guide || !engine) return;
-    guide = false; host.classList.remove('inspection-guiding'); q('[data-inspection-guide]').hidden = true; q('[data-inspection-pane]').hidden = false;
-    engine.leaveCaptureScene(); if (guideSnapshot) engine.restoreViewState(guideSnapshot); syncMotions();
-    q('[data-inspection-action="guide"]').focus();
+  function clearRoomValidation() {
+    qa('[data-room-field]').forEach(el => el.removeAttribute('aria-invalid'));
+    q('[data-room-validation]').textContent = '';
   }
   function persist() {
     if (!engine) return;
-    const snapshot = guide && mode !== 'guide' && guideSnapshot ? guideSnapshot : engine.captureViewState();
+    const snapshot = engine.captureViewState();
     if (!snapshot) return;
     snapshots.set(mode, snapshot);
     saveViewerSession(viewerKey, { schema: 1, mode: 'free', chapter: 0, tool: roomMode ? 'room' : mode === 'condition' ? 'condition' : 'model', roomTab: 'position', freeView: snapshot, guidedView: null, area: 'front', taken: [] });
@@ -140,8 +133,8 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
       return decodeReport(value.activeReport);
     } catch { return null; }
   }
-  function revealStage() {
-    if (!matchMedia('(max-width: 767px)').matches) return;
+  function revealStage(force = false) {
+    if (!force && !matchMedia('(max-width: 767px)').matches) return;
     stage.scrollIntoView({ block: 'start', behavior: 'instant' });
     stage.focus({ preventScroll: true });
   }
@@ -163,6 +156,7 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
     if (disposed) return;
     persist(); disposed = true; clearTimeout(persistTimer); controller.abort();
     if (engine) { engine.dispose(); engine = null; }
+    host._engine = null;
   };
   async function load() {
     if (loading || !alive()) return;
@@ -173,17 +167,20 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
       const created = await createEngine(stage, { onInteraction: schedulePersist, onCondition: id => { if (alive() && (engine || id)) { showCondition(id); schedulePersist(); } }, onPlacement: placement, onLoadProgress: value => { if (!alive()) return; const progress = q('progress'); if (value === null) progress.removeAttribute('value'); else progress.value = value; q('[data-loading-label]').textContent = value > 0 ? `Menyiapkan tampilan 3D… ${Math.round(value * 100)}%` : 'Menyiapkan tampilan 3D…'; } });
       if (!alive()) { created.dispose(); return; }
       engine = created;
+      host._engine = engine;
       const pendingCondition = selected;
       const saved = snapshots.get(mode) || loadViewerSession(viewerKey)?.freeView;
       const activeRoomReport = roomMode && saved ? readRoomReport() : null;
-      if (activeRoomReport) dimensionsConfirmed = activeRoomReport.dimensionsConfirmed === true;
-      if (saved && saved.inRoom === roomMode && saved.captureScene.active === (mode === 'guide')) engine.restoreViewState(saved); else if (roomMode) engine.enterRoom();
+      if (activeRoomReport) dimensionsConfirmed = sourceConfirmed && activeRoomReport.dimensionsConfirmed === true;
+      if (saved && saved.inRoom === roomMode && saved.captureScene.active === false) engine.restoreViewState(saved); else if (roomMode) engine.enterRoom();
       if (pendingCondition) engine.selectCondition(pendingCondition);
+      syncMarkers();
       syncMotions();
       qa('[data-engine-control]').forEach(el => el.disabled = false);
-      if (mode === 'guide') { guide = true; guideStep = Math.max(0, guideSteps.findIndex(step => step.phase === engine.getState().captureScene.phase)); q('[data-guide-area]').value = engine.getState().captureScene.area; updateGuide(); }
-      else { const state = engine.getState(); q('[data-inspection-action="dimensions"]').setAttribute('aria-pressed', String(state.dimensionsVisible)); setPressed('[data-view]', 'view', state.view); }
+      const state = engine.getState(); q('[data-inspection-action="dimensions"]').setAttribute('aria-pressed', String(state.dimensionsVisible)); setPressed('[data-view]', 'view', state.view);
       refreshSavedPositions();
+      history.length = 0;
+      if (roomMode) q('[data-inspection-undo]').disabled = true;
       q('.inspection-loading').hidden = true; q('.inspection-poster').hidden = true; stage.setAttribute('aria-busy', 'false');
       const canvas = stage.querySelector('canvas'); if (canvas) canvas.setAttribute('aria-hidden', 'true');
     } catch { if (alive()) { q('.inspection-loading').hidden = true; q('.inspection-error').hidden = false; stage.setAttribute('aria-busy', 'false'); } }
@@ -193,30 +190,38 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
     const condition = event.target.closest('[data-condition]');
     if (condition && host.contains(condition)) { showCondition(condition.dataset.condition); if (engine) engine.selectCondition(condition.dataset.condition); revealStage(); schedulePersist(); return; }
     if (event.target.closest('.model-marker')) { revealStage(); return; }
-    const step = event.target.closest('[data-guide-step]'); if (step && engine) { goGuideStep(Number(step.dataset.guideStep)); schedulePersist(); return; }
+    const motionToggle = event.target.closest('[data-motion-toggle]');
+    if (motionToggle && engine) {
+      const id = motionToggle.dataset.motionToggle;
+      engine.setMotion(id, engine.getState().motions[id] > 0 ? 0 : id === 'drawer' ? .3 : 100);
+      syncMotions(); schedulePersist(); return;
+    }
+    const preset = event.target.closest('[data-room-preset]');
+    if (preset && engine && roomMode) {
+      const room = roomForPreset(preset.dataset.roomPreset);
+      if (room) { clearRoomValidation(); engine.setRoom(room); engine.resetCamera(); syncMotions(); schedulePersist(); }
+      return;
+    }
     const target = event.target.closest('[data-inspection-action]'); if (!target || !host.contains(target)) return;
     const action = target.dataset.inspectionAction;
     if (action === 'retry') { load(); return; }
-    if (action === 'detail') { const detail = q('[data-inspection-detail]'); if (detail) { detail.scrollIntoView({ block: 'start', behavior: 'instant' }); detail.focus({ preventScroll: true }); } return; }
-    if (action === 'return-stage') { revealStage(); return; }
+    if (action === 'detail') { const detail = q('[data-inspection-detail]'); if (detail) { q('[data-condition-panel]').open = true; syncMarkers(); detail.scrollIntoView({ block: 'start', behavior: 'instant' }); detail.focus({ preventScroll: true }); } return; }
+    if (action === 'return-stage') { revealStage(true); return; }
     if (!engine) return;
-    if (action === 'guide') { guideSnapshot = engine.captureViewState(); guide = true; guideStep = 0; host.classList.add('inspection-guiding'); q('[data-inspection-guide]').hidden = false; q('[data-inspection-pane]').hidden = true; updateGuide(); q('[data-inspection-action="guide-close"]').focus(); }
-    else if (action === 'guide-close') closeGuide();
-    else if (action === 'guide-prev' || action === 'guide-next') goGuideStep(guideStep + (action === 'guide-next' ? 1 : -1));
-    else if (action === 'view') { engine.setView(target.dataset.view); setPressed('[data-view]', 'view', target.dataset.view); }
+    if (action === 'view') { engine.setView(target.dataset.view); setPressed('[data-view]', 'view', target.dataset.view); syncMotions(); }
     else if (action === 'room-view') engine.resetCamera();
     else if (action === 'zoom-in' || action === 'zoom-out') engine.zoomBy(action === 'zoom-in' ? .8 : 1.25);
     else if (action === 'dimensions') { const next = target.getAttribute('aria-pressed') !== 'true'; if (next && selected) engine.resetCamera(); engine.setDimensionsVisible(next); target.setAttribute('aria-pressed', String(next)); }
     else if (action === 'open' || action === 'close') { engine.setStorage(action === 'open'); syncMotions(); }
     else if (action === 'reset') { engine.setStorage(false); engine.setDimensionsVisible(false); engine.resetCamera(); q('[data-inspection-action="dimensions"]').setAttribute('aria-pressed', 'false'); setPressed('[data-view]', 'view', 'overview'); syncMotions(); }
     else if (action === 'rotate-left' || action === 'rotate-right') { if (validateRoom()) engine.setRoom({ rotation: Math.max(-180, Math.min(180, lastRoom.rotation + (action === 'rotate-left' ? -15 : 15))) }); }
-    else if (action === 'undo' && history.length) { const previous = history.pop(); dimensionsConfirmed = previous.dimensionsConfirmed; undoing = true; engine.setRoom(previous.room); undoing = false; syncMotions(); q('[data-inspection-undo]').disabled = !history.length; onToast('Posisi sebelumnya dikembalikan'); }
-    else if (action === 'reset-room') { dimensionsConfirmed = sourceConfirmed; qa('[data-room-field]').forEach(el => el.removeAttribute('aria-invalid')); q('[data-room-validation]').textContent = ''; engine.setRoom({ width: 3.2, depth: 3, x: 0, z: -.4, rotation: 0, fixture: 'clear' }); qa('[data-room-field]').forEach(el => el.value = lastRoom[el.dataset.roomField]); engine.setStorage(false); engine.resetCamera(); syncMotions(); }
+    else if (action === 'undo' && history.length) { const previous = history.pop(); dimensionsConfirmed = previous.dimensionsConfirmed; clearRoomValidation(); undoing = true; engine.setRoom(previous.room); undoing = false; syncMotions(); q('[data-inspection-undo]').disabled = !history.length; onToast('Posisi sebelumnya dikembalikan'); }
+    else if (action === 'reset-room') { dimensionsConfirmed = sourceConfirmed; clearRoomValidation(); engine.setRoom(roomForPreset('clear')); qa('[data-room-field]').forEach(el => el.value = lastRoom[el.dataset.roomField]); engine.setStorage(false); engine.resetCamera(); syncMotions(); }
     else if (action === 'save-placement' && validateRoom()) {
       const placementReport = { ...suppliedReport, schema: 2, conditionNotes: suppliedReport.conditionNotes || [], dimensionsConfirmed };
       const preview = engine.capturePlacementPreview();
       const saved = savePlacement({ report: placementReport, room: engine.getState().roomState, ...(preview ? { preview } : {}), ...(dimensionsConfirmed && lastFit ? { fit: lastFit } : {}) });
-      if (saved) { refreshSavedPositions(); const durable = storageAvailable(); q('[data-saved-caption]').textContent = durable ? 'Posisi tersimpan di perangkat ini.' : 'Posisi tersimpan selama halaman ini terbuka.'; onToast(durable ? 'Posisi tersimpan' : 'Posisi tersimpan selama halaman ini terbuka'); }
+      if (saved) { refreshSavedPositions(); q('[data-saved-details]').open = true; const durable = storageAvailable(); q('[data-saved-caption]').textContent = durable ? 'Posisi tersimpan di perangkat ini.' : 'Posisi tersimpan selama halaman ini terbuka.'; onToast(durable ? 'Posisi tersimpan' : 'Posisi tersimpan selama halaman ini terbuka'); }
       else onToast('Posisi belum dapat disimpan. Coba lagi.');
     }
     schedulePersist();
@@ -234,10 +239,9 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
     if (!engine) return;
     if (event.target.matches('[data-room-field]')) { const patch = validateRoom(); if (patch) engine.setRoom(patch); }
     else if (event.target.matches('[data-room-fixture]')) { if (validateRoom()) { engine.setFixture(event.target.value); syncMotions(); } }
-    else if (event.target.matches('[data-guide-area]')) updateGuide();
     else if (event.target.matches('[data-saved-placement]') && event.target.value !== '') {
       const saved = savedPlacements[Number(event.target.value)];
-      if (saved) { dimensionsConfirmed = saved.report.dimensionsConfirmed === true; engine.setRoom(saved.room); engine.resetCamera(); syncMotions(); q('[data-saved-caption]').textContent = dimensionsConfirmed ? 'Posisi tersimpan dibuka. Ukuran dikonfirmasi.' : 'Posisi dibuka. Ukuran belum dikonfirmasi.'; onToast('Posisi tersimpan dibuka'); }
+      if (saved) { dimensionsConfirmed = sourceConfirmed && saved.report.dimensionsConfirmed === true; clearRoomValidation(); engine.setRoom(saved.room); engine.resetCamera(); syncMotions(); q('[data-saved-caption]').textContent = dimensionsConfirmed ? 'Posisi tersimpan dibuka. Ukuran dikonfirmasi.' : 'Posisi dibuka. Ukuran belum dikonfirmasi.'; onToast('Posisi tersimpan dibuka'); }
     }
     schedulePersist();
   }, { signal: controller.signal });
@@ -247,8 +251,7 @@ export async function mountInspection(root, { mode = 'condition', onToast = () =
   document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); }, { signal: controller.signal });
   showCondition(null);
   host.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && guide && mode !== 'guide') { closeGuide(); return; }
-    if (event.target !== stage || !engine || guide) return;
+    if (event.target !== stage || !engine) return;
     if (event.key === '+' || event.key === '=') { event.preventDefault(); engine.zoomBy(.8); }
     else if (event.key === '-') { event.preventDefault(); engine.zoomBy(1.25); }
     else if (roomMode && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) { event.preventDefault(); if (validateRoom()) engine.setRoom({ x: lastRoom.x + (event.key === 'ArrowRight' ? .1 : event.key === 'ArrowLeft' ? -.1 : 0), z: lastRoom.z + (event.key === 'ArrowDown' ? .1 : event.key === 'ArrowUp' ? -.1 : 0) }); }

@@ -49,8 +49,9 @@ The `CHROMIUM_PATH` environment variable may override the executable path.
 
 This is a conventional authored raster render. It does not perform live capture,
 segmentation, reconstruction, dimension estimation, AI grading, or damage
-detection. The original cabinet capture scene is an authored photography guide. The current
-seller camera flow captures and preserves device photographs; it does not reconstruct a 3D model.
+detection. The original cabinet capture scene is an authored photography guide. V5 uses six supplied example photos in a prepared capture walkthrough. Public
+routes do not request camera access, open a file picker, or reconstruct a 3D model.
+The former V4 device-photo workflow is historical source, outside the runtime import graph.
 
 ## Existing evidence imagery
 
@@ -88,7 +89,8 @@ illustrative size improves legibility in the spatial demo.
 
 The phone screen displays a second Three.js render of the authored cabinet and
 the authored capture interface. It never reads a physical camera stream and never
-reconstructs a model. The interface explicitly labels recording as a simulation.
+reconstructs a model. The prepared flow labels its material as example photos. The screen is an authored
+visual guide, with no claim of live reconstruction or a recording from the visitor.
 The generated image contains no supplied hand-holding-phone PSD pixels.
 
 Reproduce it from the project root after installing dependencies:

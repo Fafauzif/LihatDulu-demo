@@ -16,6 +16,68 @@ dialog{position:fixed;border:0;border-radius:16px;padding:26px;max-width:calc(10
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 [hidden]{display:none!important}
 
+/* Role gateway and buyer marketplace. The layout keeps the existing Sora
+   experience intact while making the product feel like a complete marketplace. */
+.role-page{padding-top:70px;padding-bottom:88px;max-width:1440px}
+.role-hero{max-width:760px;margin:0 auto 52px;text-align:center}
+.role-eyebrow{color:#38765b;font-size:12px;font-weight:700;letter-spacing:.12em;line-height:1.5}
+.role-hero h1{font-size:clamp(36px,5vw,70px);line-height:1.05;letter-spacing:-.055em;margin-top:18px}
+.role-lead{color:var(--muted);font-size:18px;line-height:1.6;max-width:620px;margin:22px auto 0}
+.role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:stretch}
+.role-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr);min-height:330px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;transition:transform .18s,box-shadow .18s,border-color .18s}
+.role-card:hover{transform:translateY(-3px);box-shadow:0 16px 35px #173f3212;border-color:#afbeb0;color:inherit}
+.role-card-copy{display:flex;flex-direction:column;justify-content:center;padding:42px 28px 42px 36px;min-width:0}
+.role-card-eyebrow{color:#3f7056;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.role-card h2{font-size:28px;line-height:1.2;margin-top:12px;letter-spacing:-.035em}
+.role-card-copy>p:not(.role-card-eyebrow){color:var(--muted);font-size:15px;line-height:1.65;margin-top:12px;max-width:32ch}
+.role-card-action{display:inline-flex;align-items:center;gap:8px;margin-top:26px;color:var(--forest);font-size:14px;font-weight:700}
+.role-card-action .icon{width:17px;height:17px}
+.role-card-media{min-height:100%;background:var(--media);overflow:hidden}
+.role-card-media img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.role-card:hover .role-card-media img{transform:scale(1.035)}
+.role-card-seller{background:var(--forest);border-color:var(--forest);color:#fff}
+.role-card-seller:hover{color:#fff;border-color:var(--forest-hover);box-shadow:0 16px 35px #173f3230}
+.role-card-seller .role-card-eyebrow,.role-card-seller .role-card-copy>p:not(.role-card-eyebrow){color:#c8ddd0}
+.role-card-seller .role-card-action{color:#fff}
+.role-card-seller .role-card-media{background:#dfeae0}
+.role-footnote{margin-top:28px;text-align:center;color:var(--muted);font-size:13px}
+.marketplace-page{padding-bottom:88px}
+.marketplace-intro{align-items:flex-end}
+.marketplace-intro h1{max-width:620px}
+.marketplace-note{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:5px 0 8px;padding:22px 24px;border:1px solid #cbd9cd;border-radius:var(--radius);background:var(--soft)}
+.marketplace-note>div{min-width:0}
+.marketplace-note-label{display:block;color:#3f7056;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.marketplace-note strong{display:block;font-size:20px;line-height:1.3;margin-top:5px}
+.marketplace-note p{color:var(--muted);font-size:13px;margin-top:3px}
+.marketplace-note .text-link{flex:none}
+.marketplace-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:42px 26px}
+.featured-marketplace-card .card-media{aspect-ratio:1}
+.featured-marketplace-card .card-media img{object-fit:cover}
+.placeholder-media{display:block;position:relative;color:inherit}
+.placeholder-media:hover{color:inherit}
+.placeholder-media:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,#173f32dd 100%);opacity:.88;transition:opacity .18s}
+.placeholder-media:hover:after{opacity:.92}
+.placeholder-media .card-image-img{height:100%;width:100%;object-fit:cover;transition:transform .28s}
+.placeholder-media:hover .card-image-img{transform:scale(1.035)}
+.placeholder-badge{position:absolute;z-index:1;top:12px;left:12px;padding:6px 10px;border-radius:6px;background:#fafaf8ed;color:var(--forest);font-size:11px;font-weight:700}
+.placeholder-arrow{position:absolute;z-index:1;right:16px;bottom:14px;left:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#fff;font-size:13px;font-weight:700}
+.placeholder-arrow .icon{width:17px;height:17px}
+.marketplace-card .card-media{aspect-ratio:1}
+.marketplace-card .card-condition{color:#3f7056}
+.marketplace-card .card-details>a:hover h2{text-decoration:underline;text-underline-offset:4px}
+@media(max-width:1023px){.role-page{padding-top:54px}.role-grid{gap:18px}.role-card{grid-template-columns:1fr;min-height:0}.role-card-media{height:210px;order:-1}.role-card-copy{padding:26px 24px 28px}.marketplace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.featured-marketplace-card .card-media{aspect-ratio:1}}
+@media(max-width:767px){.role-page{padding-top:38px;padding-bottom:64px}.role-hero{margin-bottom:34px}.role-hero h1{font-size:39px}.role-lead{font-size:16px}.role-grid{grid-template-columns:1fr;gap:16px}.role-card{grid-template-columns:minmax(0,1fr) 38%;min-height:230px}.role-card-media{height:auto;min-height:100%;order:initial}.role-card-copy{padding:24px 18px 24px 22px}.role-card h2{font-size:23px}.role-card-copy>p:not(.role-card-eyebrow){font-size:13px;line-height:1.5}.role-card-action{font-size:13px;margin-top:18px}.marketplace-intro{display:block}.marketplace-intro h1{font-size:31px}.marketplace-note{display:block;padding:19px}.marketplace-note .text-link{margin-top:17px}.marketplace-grid{gap:30px 16px}.marketplace-page .browse-end{display:flex}.marketplace-page .browse-end>div{min-width:0}}
+@media(max-width:479px){.role-card{grid-template-columns:1fr 34%}.role-card-copy{padding:20px 14px 20px 18px}.role-card h2{font-size:20px}.role-card-copy>p:not(.role-card-eyebrow){font-size:12px}.role-card-action{font-size:12px;gap:5px}.role-card-action .icon{width:15px;height:15px}.role-card-media{min-height:220px}.marketplace-note strong{font-size:18px}.marketplace-page .browse-end{display:block}.marketplace-page .browse-end .text-link{margin-top:14px}}
+@media(max-width:359px){.marketplace-grid{grid-template-columns:1fr}.featured-marketplace-card .card-media{aspect-ratio:1}}
+
 @media(max-width:767px){body:has(input:focus,textarea:focus) .mobile-purchase{display:none}}
 
 p,h1,h2,h3,dd,strong{overflow-wrap:anywhere}.browse-intro>div,.item-heading>div:first-child{min-width:0}.media-tabs{overflow-x:auto;scrollbar-width:thin}body.purchase-dock-hidden .mobile-purchase{display:none}
+
+/* Sora: a single product with the inspection at the center. */
+.site-header{height:80px}.header-inner{gap:28px}.header-note{font-size:13px;color:var(--muted);white-space:nowrap}.desktop-nav>a:first-child{display:flex}
+.item-heading{padding-top:28px;padding-bottom:22px}.item-intro{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.6}.item-layout{align-items:start}.item-purchase{padding-top:58px}.product-capture-link{margin-top:26px;padding-top:20px;border-top:1px solid var(--line);display:grid;gap:10px}.product-capture-link>span{font-size:12px;color:var(--muted)}.product-capture-link .text-link{font-size:13px}.single-saved-grid{max-width:380px}.item-information{margin-top:36px}.on-item .site-footer{padding-bottom:max(30px,env(safe-area-inset-bottom))}.on-item #toast{bottom:28px}
+@media(max-width:1023px){.site-header{height:72px}.header-inner{display:flex;padding:0 32px}.header-note{margin-left:auto}.mobile-menu{margin-left:0}.item-purchase{padding-top:0;display:grid;grid-template-columns:1fr 1fr;gap:0 28px}.product-capture-link{grid-column:2;margin-top:18px}.material-fact{grid-column:2}}
+@media(max-width:767px){.site-header{height:64px}.header-inner{padding:0 20px;gap:16px}.header-note{display:none}.mobile-menu{margin-left:auto}.item-heading{padding-top:20px;padding-bottom:14px}.item-intro{font-size:12px;max-width:260px;margin-top:6px}.item-utilities{flex-direction:row}.item-purchase{display:block}.product-capture-link{margin-top:20px}.item-information{margin-top:24px}.single-saved-grid{max-width:420px}}
+@media(max-width:479px){.header-inner{padding:0 16px}.item-heading h1{font-size:26px}.item-utilities{align-self:flex-start}.item-intro{max-width:240px}.item-heading{gap:8px}}
+@media(max-width:359px){.item-heading h1{font-size:24px}.item-intro{font-size:11px}.item-utilities{gap:0}.utility-button{width:40px}.item-category{font-size:11px}}

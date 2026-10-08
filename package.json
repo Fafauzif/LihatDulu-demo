@@ -1,15 +1,15 @@
 {
   "name": "lihatdulu",
-  "version": "4.0.0",
-  "description": "Marketplace furnitur dengan foto, pemeriksaan 3D, dan penempatan ruang",
+  "version": "5.1.0",
+  "description": "Kenali Lemari Sora dari berbagai sisi, buka pintu dan laci, lalu coba di ruang.",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "npm run test:unit && npm run test:redesign",
-    "test:unit": "node --test tests/state.test.js tests/capture.test.js tests/viewer-state.test.js tests/placement-preview.test.js tests/studio-template.test.js tests/capture-ui.test.js tests/media-store.test.js tests/shop-state.test.js",
-    "test:redesign": "node scripts/verify-redesign.mjs",
-    "test:production": "node scripts/verify-production.mjs"
+    "test:unit": "node --test tests/state.test.js tests/capture.test.js tests/viewer-state.test.js tests/placement-preview.test.js tests/studio-template.test.js tests/capture-ui.test.js tests/media-store.test.js tests/shop-state.test.js tests/prepared-state.test.js tests/room-presets.test.js",
+    "test:redesign": "node scripts/verify-prepared.mjs",
+    "test:production": "node scripts/verify-prepared-production.mjs"
   },
   "keywords": [],
   "author": "",
