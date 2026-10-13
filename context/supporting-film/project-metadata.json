@@ -1,0 +1,20 @@
+{
+  "title": "LihatDulu product demo, revised",
+  "duration_seconds": 120,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "frames": 3600,
+  "language": "Indonesian onscreen text",
+  "narration": false,
+  "music": "Original synthesized instrumental score and product effects",
+  "provenance": {
+    "cabinet": "Original authored demonstration GLB and articulation manifest",
+    "capture": "Actual predefined-sample camera workflow, seven captures",
+    "buyer": "Actual same-session 7/9 shared listing and buyer report",
+    "request": "Real prepare-and-copy request dialog, no message sent",
+    "room": "Original room geometry and fixed source obstacle",
+    "dimensions": "Closed-model dimensions, physical measurements unconfirmed",
+    "font": "Plus Jakarta Sans, OFL included"
+  }
+}

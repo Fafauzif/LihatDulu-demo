@@ -1,0 +1,95 @@
+{
+  "retrieved_date": "2026-10-13",
+  "files": [
+    {
+      "path": "skills/vendor/awesome-design-md/LICENSE",
+      "url": "https://raw.githubusercontent.com/voltagent/awesome-design-md/main/LICENSE",
+      "bytes": 1066,
+      "sha256": "6d4bdc9a9cf30e7beb593475fdcdbf29f981ea6bd7923f202866145409f87b44",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/awesome-design-md/README.md",
+      "url": "https://raw.githubusercontent.com/voltagent/awesome-design-md/main/README.md",
+      "bytes": 17686,
+      "sha256": "5950c27e1633d9166a1607618bf0530415057d6de5ad2c3de8830585fc7b4381",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/playwright-cli/LICENSE",
+      "url": "https://raw.githubusercontent.com/microsoft/playwright-cli/main/LICENSE",
+      "bytes": 11552,
+      "sha256": "9a7110fc2d2f964038e5dc49128f908f29f47a574c961cba16085914e879cbda",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/playwright-cli/SKILL.md",
+      "url": "https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/SKILL.md",
+      "bytes": 15428,
+      "sha256": "9bba755285a4c9ad72a4a41b9c7baef6fb516d329c0b44ed0573715f4479b906",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/taste-core/LICENSE",
+      "url": "https://raw.githubusercontent.com/Leonxlnx/taste-skill/main/LICENSE",
+      "bytes": 1065,
+      "sha256": "4575a543ab88dad12ccea7d97e563d0bce5b448b06072e65d3264497dad326df",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/taste-core/SKILL.md",
+      "url": "https://raw.githubusercontent.com/Leonxlnx/taste-skill/main/skills/taste-skill/SKILL.md",
+      "bytes": 89478,
+      "sha256": "2136ed83016bfada39f7b8013b2aafd9f78fcbd9799110ed222a79c6419ba5fb",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/taste-redesign/LICENSE",
+      "url": "https://raw.githubusercontent.com/Leonxlnx/taste-skill/main/LICENSE",
+      "bytes": 1065,
+      "sha256": "4575a543ab88dad12ccea7d97e563d0bce5b448b06072e65d3264497dad326df",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/taste-redesign/SKILL.md",
+      "url": "https://raw.githubusercontent.com/Leonxlnx/taste-skill/main/skills/redesign-skill/SKILL.md",
+      "bytes": 16267,
+      "sha256": "a75d547d04595fe97a5d377dddf145d029d51487a4f2a0a5a9d3b532ca3b84cd",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/vercel-web-design/LICENSE",
+      "url": "https://raw.githubusercontent.com/vercel-labs/agent-skills/main/LICENSE",
+      "status": "upstream-standalone-file-not-provided",
+      "resolution": "MIT declaration retained in UPSTREAM_README.md and LICENSE_NOTICE.md"
+    },
+    {
+      "path": "skills/vendor/vercel-web-design/SKILL.md",
+      "url": "https://raw.githubusercontent.com/vercel-labs/agent-skills/main/skills/web-design-guidelines/SKILL.md",
+      "bytes": 1231,
+      "sha256": "f4647ca866a3accf763777f83e7682954f0187cd6bea7eea0399796652414e8f",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/web-interface-guidelines/LICENSE",
+      "url": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/LICENSE",
+      "bytes": 1068,
+      "sha256": "6cd1609c9c12233507cdd2ce0d32e9a721e3c27494951be06b90090deeeb7af2",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/web-interface-guidelines/command.md",
+      "url": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+      "bytes": 8055,
+      "sha256": "d246b026f4f29b5823a9cc857f9edf3d2507002e055e32040cadeaf3b38e0234",
+      "status": "saved"
+    },
+    {
+      "path": "skills/vendor/vercel-web-design/UPSTREAM_README.md",
+      "url": "https://raw.githubusercontent.com/vercel-labs/agent-skills/main/README.md",
+      "bytes": 7838,
+      "sha256": "7c02f64b08fc6c4eef03c01d64f3e2ed478193ccfcbd14edba379abe23304651",
+      "status": "saved"
+    }
+  ]
+}

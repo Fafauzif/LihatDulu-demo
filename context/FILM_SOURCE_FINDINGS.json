@@ -1,0 +1,40 @@
+{
+  "source_archive": "LihatDulu_Editable_Project_Revised.zip",
+  "archive_sha256": "7990388d7eefb34945fc3cb0bea7dc555eac0aa0657193c801516e2cc7da2983",
+  "cabinet_glb_matches_website": true,
+  "cabinet_sha256": "18cf94f5d342f9949d5b100bde3968dfc14b1746c3cb47570cf930ab55c9d742",
+  "cadquery_construction_sources_found": false,
+  "included_subset": [
+    {
+      "path": "context/supporting-film/README.md",
+      "bytes": 4594,
+      "sha256": "219cd26d85d44dcbc172d1a559573c4b5886eb3152062bfed4bf9a1186b85624",
+      "source_member": "LihatDulu_Editable_Project/README.md"
+    },
+    {
+      "path": "context/supporting-film/project-metadata.json",
+      "bytes": 792,
+      "sha256": "4e0338cee4073cd61e2b39c4de7fb23bf732c2df47f689ce710b316033838fce",
+      "source_member": "LihatDulu_Editable_Project/project-metadata.json"
+    },
+    {
+      "path": "context/supporting-film/ASSET_MANIFEST.json",
+      "bytes": 11888,
+      "sha256": "c2a7962ed2dc205f1908d326a759fafbaee265a16aaec73df64f80d09f886082",
+      "source_member": "LihatDulu_Editable_Project/ASSET_MANIFEST.json"
+    },
+    {
+      "path": "context/supporting-film/film/src/CabinetScene.tsx",
+      "bytes": 16716,
+      "sha256": "940319b6749bbcd60695e9616d62de0ff0f7ea9ea1423fedb7b095522de04d5c",
+      "source_member": "LihatDulu_Editable_Project/film/src/CabinetScene.tsx"
+    },
+    {
+      "path": "context/supporting-film/film/src/product-geometry.js",
+      "bytes": 5095,
+      "sha256": "06b3b18c8fbb8bd6b9f17cfa608189d01a32161cf42aa7675ca3762acf150dc1",
+      "source_member": "LihatDulu_Editable_Project/film/src/product-geometry.js"
+    }
+  ],
+  "scope": "Historical supporting film excerpts only. Audio and complete film project intentionally excluded."
+}

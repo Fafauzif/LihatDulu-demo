@@ -1,0 +1,733 @@
+{
+  "source_archive": "LihatDulu_Vercel_v5_1.zip",
+  "archive_sha256": "bd221464fc5318c590d99b6277f52e06e60cdb4046c5e3e5a259367fe58cbab6",
+  "version": "5.1.0",
+  "files": [
+    {
+      "path": "app/index.html",
+      "bytes": 800,
+      "sha256": "89350e4a21fb845401f1db831a46770313b30539d3849d66bd0419dea6ff6555",
+      "source_member": "LihatDulu/index.html"
+    },
+    {
+      "path": "app/tests/capture-ui.test.js",
+      "bytes": 3607,
+      "sha256": "53475fc9dc0fb4b41c44d68f46876dab9be6ba9e6d735c51fce25f7e438843c4",
+      "source_member": "LihatDulu/tests/capture-ui.test.js"
+    },
+    {
+      "path": "app/tests/app.spec.js",
+      "bytes": 14638,
+      "sha256": "de87653c56966b8a52be721fdf824cd24f51e6a0bc33b5d5e4b45a3b56db6574",
+      "source_member": "LihatDulu/tests/app.spec.js"
+    },
+    {
+      "path": "app/tests/capture.test.js",
+      "bytes": 7953,
+      "sha256": "d639060a02b838392716a2eb0cb9e3b47276652ed4debde3ed40f876b4b7dd18",
+      "source_member": "LihatDulu/tests/capture.test.js"
+    },
+    {
+      "path": "app/tests/room-presets.test.js",
+      "bytes": 3663,
+      "sha256": "4d7f103682575d1059a2589da8c072dc79cd6312bccdadadafeb648e0007cf15",
+      "source_member": "LihatDulu/tests/room-presets.test.js"
+    },
+    {
+      "path": "app/tests/shop-state.test.js",
+      "bytes": 984,
+      "sha256": "753d69f2220f1beee4bfae7fb546fad4fb53a9cba147a22493512fa91b911048",
+      "source_member": "LihatDulu/tests/shop-state.test.js"
+    },
+    {
+      "path": "app/tests/viewer-state.test.js",
+      "bytes": 7877,
+      "sha256": "76e8a3938e662c5e307da0b76edb23029dfdb44b171e7d2e7c8dcddf6076a9a1",
+      "source_member": "LihatDulu/tests/viewer-state.test.js"
+    },
+    {
+      "path": "app/tests/engine.spec.js",
+      "bytes": 4176,
+      "sha256": "1a4f0d721d4a43ce5dd13cfe62bed4d80255be0fb802c92a784bab59682177fd",
+      "source_member": "LihatDulu/tests/engine.spec.js"
+    },
+    {
+      "path": "app/tests/inspection-persistence.spec.js",
+      "bytes": 4850,
+      "sha256": "aeda60f0f87e3f20f404b8f128d05d05c712ad87ffd60ab5cdcc6121fdc5b9d3",
+      "source_member": "LihatDulu/tests/inspection-persistence.spec.js"
+    },
+    {
+      "path": "app/tests/placement-preview.test.js",
+      "bytes": 4073,
+      "sha256": "dd259aedfe321df90d5a46dfd4f8dec2891f5a781ffea148a2f698e0e266ef08",
+      "source_member": "LihatDulu/tests/placement-preview.test.js"
+    },
+    {
+      "path": "app/tests/state.test.js",
+      "bytes": 7542,
+      "sha256": "3acff1cd50a3652c85518af1f998b1a1eca183f65b993a6eb87c5fd98d48e799",
+      "source_member": "LihatDulu/tests/state.test.js"
+    },
+    {
+      "path": "app/tests/mobile-exploration.spec.js",
+      "bytes": 10316,
+      "sha256": "9d1e3126f6bf1b9b6a9d105f8c2ffe158c2a15e29194194ba7bd05344e31764f",
+      "source_member": "LihatDulu/tests/mobile-exploration.spec.js"
+    },
+    {
+      "path": "app/tests/studio-template.test.js",
+      "bytes": 2329,
+      "sha256": "98b9960a8709adc07a086f1a605fb17c8f295111822535aa46ca7391413e4b34",
+      "source_member": "LihatDulu/tests/studio-template.test.js"
+    },
+    {
+      "path": "app/tests/prepared-state.test.js",
+      "bytes": 1266,
+      "sha256": "edeed6ccfaa448671585ea03cfd2081562c3b144ae467169cd33a120ede35bc5",
+      "source_member": "LihatDulu/tests/prepared-state.test.js"
+    },
+    {
+      "path": "app/tests/media-store.test.js",
+      "bytes": 4411,
+      "sha256": "d4ead7d9182f64809a1e11cc224138c617f954638844516295edda3b19b78d97",
+      "source_member": "LihatDulu/tests/media-store.test.js"
+    },
+    {
+      "path": "app/vercel.json",
+      "bytes": 388,
+      "sha256": "a247f80c11d4e19275fec9058f59f1cef71ee26faf96345686e33a8825f23fea",
+      "source_member": "LihatDulu/vercel.json"
+    },
+    {
+      "path": "app/scripts/render-capture-preview.js",
+      "bytes": 2716,
+      "sha256": "dc17627581df50616ab70f637aa5bb23ae3d2648944e445d492e2c6e9e802590",
+      "source_member": "LihatDulu/scripts/render-capture-preview.js"
+    },
+    {
+      "path": "app/scripts/verify-production.mjs",
+      "bytes": 4555,
+      "sha256": "3a53096977925e5e5c8e95a4e8de94ff9f7e527a502937236c552acc71a61fb2",
+      "source_member": "LihatDulu/scripts/verify-production.mjs"
+    },
+    {
+      "path": "app/scripts/render-scene-assets.js",
+      "bytes": 9744,
+      "sha256": "b2b6ebb619418fabe322dc5b1492735c871147b4cf63871e9bc7b05c2d3ecfad",
+      "source_member": "LihatDulu/scripts/render-scene-assets.js"
+    },
+    {
+      "path": "app/scripts/verify-prepared-production.mjs",
+      "bytes": 13482,
+      "sha256": "adcdbfa2e34a7611e1a3e3c3db71564bd447104bdb6881f9be7c577ba5e26b0e",
+      "source_member": "LihatDulu/scripts/verify-prepared-production.mjs"
+    },
+    {
+      "path": "app/scripts/test-browser.js",
+      "bytes": 1635,
+      "sha256": "f29fa278939a7126b6eeca15e2082f1a5b0c15947933a1116636172e4c548285",
+      "source_member": "LihatDulu/scripts/test-browser.js"
+    },
+    {
+      "path": "app/scripts/verify-prepared.mjs",
+      "bytes": 61713,
+      "sha256": "82bf0f824c8bdbd22499dfb4b0586163ee9b585af94e459354cfd529ed11b74f",
+      "source_member": "LihatDulu/scripts/verify-prepared.mjs"
+    },
+    {
+      "path": "app/scripts/verify-redesign.mjs",
+      "bytes": 31890,
+      "sha256": "990f9d6e86188df531ccedcc5a4603f2b4a7e37726411774c8377ac3ceabaf05",
+      "source_member": "LihatDulu/scripts/verify-redesign.mjs"
+    },
+    {
+      "path": "app/scripts/production-smoke.js",
+      "bytes": 8581,
+      "sha256": "c24c88967e7ca952c1b02121e4f11ac1f5c5a3abaf0098a41f6509c44d482c9c",
+      "source_member": "LihatDulu/scripts/production-smoke.js"
+    },
+    {
+      "path": "app/scripts/capture.js",
+      "bytes": 6657,
+      "sha256": "b6fa0b5a8416c152ac8d25c46032bd0fe8e3c98576e1fdf0ac386b79aa78f71f",
+      "source_member": "LihatDulu/scripts/capture.js"
+    },
+    {
+      "path": "app/package-lock.json",
+      "bytes": 34361,
+      "sha256": "0aa3716c3bfa3a8ce233ab0f9f0348bfb2b2b9668d896f39340896484a161e41",
+      "source_member": "LihatDulu/package-lock.json"
+    },
+    {
+      "path": "app/THIRD_PARTY_LICENSES.txt",
+      "bytes": 114469,
+      "sha256": "a28cb207fc2ee47b6044a89d49e354841495b531e7b948c38b8c181ea1977167",
+      "source_member": "LihatDulu/THIRD_PARTY_LICENSES.txt"
+    },
+    {
+      "path": "app/package.json",
+      "bytes": 1060,
+      "sha256": "0a5dbacc0efb63525bc6dfab946e923a518c58bb2898523ee140a498f647980a",
+      "source_member": "LihatDulu/package.json"
+    },
+    {
+      "path": "app/dist/images/wear-chip.webp",
+      "bytes": 99432,
+      "sha256": "bb25097b82f8cc2986b9ea7d2264ecbdbaf83c2650965422d2782e74bd7f4b34",
+      "source_member": "LihatDulu/dist/images/wear-chip.webp"
+    },
+    {
+      "path": "app/dist/images/cabinet-open-alpha.webp",
+      "bytes": 13590,
+      "sha256": "e41c6668b9b53265f510e7951fbee4c27722c32678f85e756c29e9403eba6eb1",
+      "source_member": "LihatDulu/dist/images/cabinet-open-alpha.webp"
+    },
+    {
+      "path": "app/dist/images/capture-front-right.webp",
+      "bytes": 59368,
+      "sha256": "f8e19d539ebe67f230259c15a461c85d92f702d7b8285e67b1033230ccfe0ee7",
+      "source_member": "LihatDulu/dist/images/capture-front-right.webp"
+    },
+    {
+      "path": "app/dist/images/capture-front-left.webp",
+      "bytes": 59470,
+      "sha256": "a53a37664a2f0a67eedcc914b5f96fa2fb6f24b7fac457a50b23ad38d6a5801a",
+      "source_member": "LihatDulu/dist/images/capture-front-left.webp"
+    },
+    {
+      "path": "app/dist/images/cabinet-closed.webp",
+      "bytes": 59368,
+      "sha256": "f8e19d539ebe67f230259c15a461c85d92f702d7b8285e67b1033230ccfe0ee7",
+      "source_member": "LihatDulu/dist/images/cabinet-closed.webp"
+    },
+    {
+      "path": "app/dist/images/capture-top.webp",
+      "bytes": 81512,
+      "sha256": "b556920cbb5f0636db772b91957d7447346b81d0c412e3f3b56bd62bfd278cc9",
+      "source_member": "LihatDulu/dist/images/capture-top.webp"
+    },
+    {
+      "path": "app/dist/images/capture-interior.webp",
+      "bytes": 90584,
+      "sha256": "de7e2d93c5b66c524d4726c66bc80a4044d6beda7b4df27ecf910f45a02b9689",
+      "source_member": "LihatDulu/dist/images/capture-interior.webp"
+    },
+    {
+      "path": "app/dist/images/capture-left.webp",
+      "bytes": 41632,
+      "sha256": "460fa28b9918b202dbf14e0f91f8b68e06164bd9830b6d3f0d4f52a591b11d10",
+      "source_member": "LihatDulu/dist/images/capture-left.webp"
+    },
+    {
+      "path": "app/dist/images/capture-underside.webp",
+      "bytes": 50238,
+      "sha256": "ed0ba0ff34f604bf28154613ba4d9a02733f4d426045b707f29b8752a34489dd",
+      "source_member": "LihatDulu/dist/images/capture-underside.webp"
+    },
+    {
+      "path": "app/dist/images/studio-capture-scene.webp",
+      "bytes": 47718,
+      "sha256": "8915badf2c081985223043475b8580807a10eb3c6e8b0dc28ea50485bb5eff41",
+      "source_member": "LihatDulu/dist/images/studio-capture-scene.webp"
+    },
+    {
+      "path": "app/dist/images/wear-scratch.webp",
+      "bytes": 125722,
+      "sha256": "791d5483d68878f8d67db97385583c2baa5049e77dbd9334b3de0239f89cea5b",
+      "source_member": "LihatDulu/dist/images/wear-scratch.webp"
+    },
+    {
+      "path": "app/dist/images/wear-mark.webp",
+      "bytes": 99232,
+      "sha256": "1657945b2ad204f84a1ac8cb3e5b2ec105517857b4ff2228f678c52ded43a7ce",
+      "source_member": "LihatDulu/dist/images/wear-mark.webp"
+    },
+    {
+      "path": "app/dist/images/room-cabinet-hero.webp",
+      "bytes": 101442,
+      "sha256": "e6c1113eb6434451bb811cc8c8ef0867f773b11935987f84a24c8c0f4b28ea2b",
+      "source_member": "LihatDulu/dist/images/room-cabinet-hero.webp"
+    },
+    {
+      "path": "app/dist/images/capture-rear.webp",
+      "bytes": 50432,
+      "sha256": "b7d4a04f16b7e5fa128eb6aabfed70af57a47d324256369b3f4a60930c6b54f2",
+      "source_member": "LihatDulu/dist/images/capture-rear.webp"
+    },
+    {
+      "path": "app/dist/images/capture-drawer.webp",
+      "bytes": 86574,
+      "sha256": "ba0176e17af931c2bd3d641d65f4534d2a382976220060d4a14ba8ab10baca88",
+      "source_member": "LihatDulu/dist/images/capture-drawer.webp"
+    },
+    {
+      "path": "app/dist/images/cabinet-open-alpha.png",
+      "bytes": 148924,
+      "sha256": "5a84192830d1095d71ead2b421ba297f384a9c751bd6fe3ddd5449358fd1cea2",
+      "source_member": "LihatDulu/dist/images/cabinet-open-alpha.png"
+    },
+    {
+      "path": "app/dist/images/cabinet-open.webp",
+      "bytes": 65886,
+      "sha256": "ca7d39e959f54a2f2aaf01564b7fe2afd61d2f034bee528d18738d804a1b73f4",
+      "source_member": "LihatDulu/dist/images/cabinet-open.webp"
+    },
+    {
+      "path": "app/dist/images/catalogue/rimba-sideboard.webp",
+      "bytes": 80168,
+      "sha256": "c99a3ee9808bba934e91a5b7ffbec0eb34cbdb7777e862dd8627a87fab25ff26",
+      "source_member": "LihatDulu/dist/images/catalogue/rimba-sideboard.webp"
+    },
+    {
+      "path": "app/dist/images/catalogue/batu-coffee.webp",
+      "bytes": 91190,
+      "sha256": "e1c829e0e5abe513a8444d85853d4ffeefa0f4b254b66f00da432f9f98a5117b",
+      "source_member": "LihatDulu/dist/images/catalogue/batu-coffee.webp"
+    },
+    {
+      "path": "app/dist/images/catalogue/arca-chair.webp",
+      "bytes": 81088,
+      "sha256": "dbb53917d55466f4ba4301a3a5574d3dc2e6d4c0b6cb12ae3ec7943ef436f10e",
+      "source_member": "LihatDulu/dist/images/catalogue/arca-chair.webp"
+    },
+    {
+      "path": "app/dist/images/catalogue/lino-sofa.webp",
+      "bytes": 133438,
+      "sha256": "3bffbbd6eb7c75548c8fd3eb65aaead13793103e8336f485504bbd46cd56175d",
+      "source_member": "LihatDulu/dist/images/catalogue/lino-sofa.webp"
+    },
+    {
+      "path": "app/dist/images/catalogue/nara-lounge.webp",
+      "bytes": 86510,
+      "sha256": "703fdb762f4146b90d90e20a16bbbaed01fa76e8117a015238fe02e51716e894",
+      "source_member": "LihatDulu/dist/images/catalogue/nara-lounge.webp"
+    },
+    {
+      "path": "app/dist/images/capture-right.webp",
+      "bytes": 47694,
+      "sha256": "ab0009936c847b9f2b454f168c5605552f0f76eeeef683c1c7875319dcc5456f",
+      "source_member": "LihatDulu/dist/images/capture-right.webp"
+    },
+    {
+      "path": "app/dist/images/room-cabinet-detail.webp",
+      "bytes": 81830,
+      "sha256": "95a61f5e00c4c956fff4c34e21797d73505442af6049867f08ac6d039967258b",
+      "source_member": "LihatDulu/dist/images/room-cabinet-detail.webp"
+    },
+    {
+      "path": "app/dist/images/capture-front.webp",
+      "bytes": 53998,
+      "sha256": "4ff3dba186cf745245aed33f415963232d49ef0fa43976ac6823bf6a55bb1b12",
+      "source_member": "LihatDulu/dist/images/capture-front.webp"
+    },
+    {
+      "path": "app/dist/index.html",
+      "bytes": 899,
+      "sha256": "05644bb982ba2bbbaceaebed05269e6a1450b2d798dface3366a32fb2e9bbb22",
+      "source_member": "LihatDulu/dist/index.html"
+    },
+    {
+      "path": "app/dist/assets/index-BxwkETk1.js",
+      "bytes": 68320,
+      "sha256": "3f1c66a01fa3933f4bb9f463fa8b6b81f24c4f161873288fe64b1cbda3ca1a5d",
+      "source_member": "LihatDulu/dist/assets/index-BxwkETk1.js"
+    },
+    {
+      "path": "app/dist/assets/engine-vRG4A9NQ.js",
+      "bytes": 695128,
+      "sha256": "293d70ba63c6eb54babc32d884c519002cb5c8268847ef2878933662df9359f4",
+      "source_member": "LihatDulu/dist/assets/engine-vRG4A9NQ.js"
+    },
+    {
+      "path": "app/dist/assets/cabinet-manifest.json",
+      "bytes": 7840,
+      "sha256": "d88a9e3d2b1a92afd4f3a3bb0dfd991fdb16c2598e67449ff3edbd2224713cd6",
+      "source_member": "LihatDulu/dist/assets/cabinet-manifest.json"
+    },
+    {
+      "path": "app/dist/assets/cabinet.glb",
+      "bytes": 4702852,
+      "sha256": "18cf94f5d342f9949d5b100bde3968dfc14b1746c3cb47570cf930ab55c9d742",
+      "source_member": "LihatDulu/dist/assets/cabinet.glb"
+    },
+    {
+      "path": "app/dist/assets/index-Dfho1xh3.css",
+      "bytes": 56216,
+      "sha256": "0fcc56df49dfc6a2c6d506204053b3c6857dcdcbe8ccacdebf769bb70943a993",
+      "source_member": "LihatDulu/dist/assets/index-Dfho1xh3.css"
+    },
+    {
+      "path": "app/dist/assets/cabinet-report.json",
+      "bytes": 3951,
+      "sha256": "b3b388dc7c678118532c4cb193b65bb2555c93919064072d26db8c26b5e92403",
+      "source_member": "LihatDulu/dist/assets/cabinet-report.json"
+    },
+    {
+      "path": "app/dist/favicon.svg",
+      "bytes": 286,
+      "sha256": "59329e5a5942a502da7e6f0b0c42a239d4e0766c9f3bf2485ea7f6370a6b7e60",
+      "source_member": "LihatDulu/dist/favicon.svg"
+    },
+    {
+      "path": "app/dist/fonts/plus-jakarta-sans-latin.woff2",
+      "bytes": 27348,
+      "sha256": "153fc85b70298beeb1d61a5f723331649e7f23bb77302a66e61cb3e2fbdb5e79",
+      "source_member": "LihatDulu/dist/fonts/plus-jakarta-sans-latin.woff2"
+    },
+    {
+      "path": "app/dist/fonts/OFL.txt",
+      "bytes": 4534,
+      "sha256": "e07fd1167c2aaaa6fb965dd66e1e73b13c9c95b76b2d648b6e938780f30b37af",
+      "source_member": "LihatDulu/dist/fonts/OFL.txt"
+    },
+    {
+      "path": "app/README.md",
+      "bytes": 6257,
+      "sha256": "a4663a64eae83947ff54043686c246080354b33dbdd3de8853191853774dbcaf",
+      "source_member": "LihatDulu/README.md"
+    },
+    {
+      "path": "app/public/images/wear-chip.webp",
+      "bytes": 99432,
+      "sha256": "bb25097b82f8cc2986b9ea7d2264ecbdbaf83c2650965422d2782e74bd7f4b34",
+      "source_member": "LihatDulu/public/images/wear-chip.webp"
+    },
+    {
+      "path": "app/public/images/cabinet-open-alpha.webp",
+      "bytes": 13590,
+      "sha256": "e41c6668b9b53265f510e7951fbee4c27722c32678f85e756c29e9403eba6eb1",
+      "source_member": "LihatDulu/public/images/cabinet-open-alpha.webp"
+    },
+    {
+      "path": "app/public/images/capture-front-right.webp",
+      "bytes": 59368,
+      "sha256": "f8e19d539ebe67f230259c15a461c85d92f702d7b8285e67b1033230ccfe0ee7",
+      "source_member": "LihatDulu/public/images/capture-front-right.webp"
+    },
+    {
+      "path": "app/public/images/capture-front-left.webp",
+      "bytes": 59470,
+      "sha256": "a53a37664a2f0a67eedcc914b5f96fa2fb6f24b7fac457a50b23ad38d6a5801a",
+      "source_member": "LihatDulu/public/images/capture-front-left.webp"
+    },
+    {
+      "path": "app/public/images/cabinet-closed.webp",
+      "bytes": 59368,
+      "sha256": "f8e19d539ebe67f230259c15a461c85d92f702d7b8285e67b1033230ccfe0ee7",
+      "source_member": "LihatDulu/public/images/cabinet-closed.webp"
+    },
+    {
+      "path": "app/public/images/capture-top.webp",
+      "bytes": 81512,
+      "sha256": "b556920cbb5f0636db772b91957d7447346b81d0c412e3f3b56bd62bfd278cc9",
+      "source_member": "LihatDulu/public/images/capture-top.webp"
+    },
+    {
+      "path": "app/public/images/capture-interior.webp",
+      "bytes": 90584,
+      "sha256": "de7e2d93c5b66c524d4726c66bc80a4044d6beda7b4df27ecf910f45a02b9689",
+      "source_member": "LihatDulu/public/images/capture-interior.webp"
+    },
+    {
+      "path": "app/public/images/capture-left.webp",
+      "bytes": 41632,
+      "sha256": "460fa28b9918b202dbf14e0f91f8b68e06164bd9830b6d3f0d4f52a591b11d10",
+      "source_member": "LihatDulu/public/images/capture-left.webp"
+    },
+    {
+      "path": "app/public/images/capture-underside.webp",
+      "bytes": 50238,
+      "sha256": "ed0ba0ff34f604bf28154613ba4d9a02733f4d426045b707f29b8752a34489dd",
+      "source_member": "LihatDulu/public/images/capture-underside.webp"
+    },
+    {
+      "path": "app/public/images/studio-capture-scene.webp",
+      "bytes": 47718,
+      "sha256": "8915badf2c081985223043475b8580807a10eb3c6e8b0dc28ea50485bb5eff41",
+      "source_member": "LihatDulu/public/images/studio-capture-scene.webp"
+    },
+    {
+      "path": "app/public/images/wear-scratch.webp",
+      "bytes": 125722,
+      "sha256": "791d5483d68878f8d67db97385583c2baa5049e77dbd9334b3de0239f89cea5b",
+      "source_member": "LihatDulu/public/images/wear-scratch.webp"
+    },
+    {
+      "path": "app/public/images/wear-mark.webp",
+      "bytes": 99232,
+      "sha256": "1657945b2ad204f84a1ac8cb3e5b2ec105517857b4ff2228f678c52ded43a7ce",
+      "source_member": "LihatDulu/public/images/wear-mark.webp"
+    },
+    {
+      "path": "app/public/images/room-cabinet-hero.webp",
+      "bytes": 101442,
+      "sha256": "e6c1113eb6434451bb811cc8c8ef0867f773b11935987f84a24c8c0f4b28ea2b",
+      "source_member": "LihatDulu/public/images/room-cabinet-hero.webp"
+    },
+    {
+      "path": "app/public/images/capture-rear.webp",
+      "bytes": 50432,
+      "sha256": "b7d4a04f16b7e5fa128eb6aabfed70af57a47d324256369b3f4a60930c6b54f2",
+      "source_member": "LihatDulu/public/images/capture-rear.webp"
+    },
+    {
+      "path": "app/public/images/capture-drawer.webp",
+      "bytes": 86574,
+      "sha256": "ba0176e17af931c2bd3d641d65f4534d2a382976220060d4a14ba8ab10baca88",
+      "source_member": "LihatDulu/public/images/capture-drawer.webp"
+    },
+    {
+      "path": "app/public/images/cabinet-open-alpha.png",
+      "bytes": 148924,
+      "sha256": "5a84192830d1095d71ead2b421ba297f384a9c751bd6fe3ddd5449358fd1cea2",
+      "source_member": "LihatDulu/public/images/cabinet-open-alpha.png"
+    },
+    {
+      "path": "app/public/images/cabinet-open.webp",
+      "bytes": 65886,
+      "sha256": "ca7d39e959f54a2f2aaf01564b7fe2afd61d2f034bee528d18738d804a1b73f4",
+      "source_member": "LihatDulu/public/images/cabinet-open.webp"
+    },
+    {
+      "path": "app/public/images/catalogue/rimba-sideboard.webp",
+      "bytes": 80168,
+      "sha256": "c99a3ee9808bba934e91a5b7ffbec0eb34cbdb7777e862dd8627a87fab25ff26",
+      "source_member": "LihatDulu/public/images/catalogue/rimba-sideboard.webp"
+    },
+    {
+      "path": "app/public/images/catalogue/batu-coffee.webp",
+      "bytes": 91190,
+      "sha256": "e1c829e0e5abe513a8444d85853d4ffeefa0f4b254b66f00da432f9f98a5117b",
+      "source_member": "LihatDulu/public/images/catalogue/batu-coffee.webp"
+    },
+    {
+      "path": "app/public/images/catalogue/arca-chair.webp",
+      "bytes": 81088,
+      "sha256": "dbb53917d55466f4ba4301a3a5574d3dc2e6d4c0b6cb12ae3ec7943ef436f10e",
+      "source_member": "LihatDulu/public/images/catalogue/arca-chair.webp"
+    },
+    {
+      "path": "app/public/images/catalogue/lino-sofa.webp",
+      "bytes": 133438,
+      "sha256": "3bffbbd6eb7c75548c8fd3eb65aaead13793103e8336f485504bbd46cd56175d",
+      "source_member": "LihatDulu/public/images/catalogue/lino-sofa.webp"
+    },
+    {
+      "path": "app/public/images/catalogue/nara-lounge.webp",
+      "bytes": 86510,
+      "sha256": "703fdb762f4146b90d90e20a16bbbaed01fa76e8117a015238fe02e51716e894",
+      "source_member": "LihatDulu/public/images/catalogue/nara-lounge.webp"
+    },
+    {
+      "path": "app/public/images/capture-right.webp",
+      "bytes": 47694,
+      "sha256": "ab0009936c847b9f2b454f168c5605552f0f76eeeef683c1c7875319dcc5456f",
+      "source_member": "LihatDulu/public/images/capture-right.webp"
+    },
+    {
+      "path": "app/public/images/room-cabinet-detail.webp",
+      "bytes": 81830,
+      "sha256": "95a61f5e00c4c956fff4c34e21797d73505442af6049867f08ac6d039967258b",
+      "source_member": "LihatDulu/public/images/room-cabinet-detail.webp"
+    },
+    {
+      "path": "app/public/images/capture-front.webp",
+      "bytes": 53998,
+      "sha256": "4ff3dba186cf745245aed33f415963232d49ef0fa43976ac6823bf6a55bb1b12",
+      "source_member": "LihatDulu/public/images/capture-front.webp"
+    },
+    {
+      "path": "app/public/assets/cabinet-manifest.json",
+      "bytes": 7840,
+      "sha256": "d88a9e3d2b1a92afd4f3a3bb0dfd991fdb16c2598e67449ff3edbd2224713cd6",
+      "source_member": "LihatDulu/public/assets/cabinet-manifest.json"
+    },
+    {
+      "path": "app/public/assets/cabinet.glb",
+      "bytes": 4702852,
+      "sha256": "18cf94f5d342f9949d5b100bde3968dfc14b1746c3cb47570cf930ab55c9d742",
+      "source_member": "LihatDulu/public/assets/cabinet.glb"
+    },
+    {
+      "path": "app/public/assets/cabinet-report.json",
+      "bytes": 3951,
+      "sha256": "b3b388dc7c678118532c4cb193b65bb2555c93919064072d26db8c26b5e92403",
+      "source_member": "LihatDulu/public/assets/cabinet-report.json"
+    },
+    {
+      "path": "app/public/favicon.svg",
+      "bytes": 286,
+      "sha256": "59329e5a5942a502da7e6f0b0c42a239d4e0766c9f3bf2485ea7f6370a6b7e60",
+      "source_member": "LihatDulu/public/favicon.svg"
+    },
+    {
+      "path": "app/public/fonts/plus-jakarta-sans-latin.woff2",
+      "bytes": 27348,
+      "sha256": "153fc85b70298beeb1d61a5f723331649e7f23bb77302a66e61cb3e2fbdb5e79",
+      "source_member": "LihatDulu/public/fonts/plus-jakarta-sans-latin.woff2"
+    },
+    {
+      "path": "app/public/fonts/OFL.txt",
+      "bytes": 4534,
+      "sha256": "e07fd1167c2aaaa6fb965dd66e1e73b13c9c95b76b2d648b6e938780f30b37af",
+      "source_member": "LihatDulu/public/fonts/OFL.txt"
+    },
+    {
+      "path": "app/src/inspection.css",
+      "bytes": 14607,
+      "sha256": "8a01e0659c47f4016448a889dbd9a2b344e186d1426933b01ca8e7e1ba849371",
+      "source_member": "LihatDulu/src/inspection.css"
+    },
+    {
+      "path": "app/src/media-store.js",
+      "bytes": 5999,
+      "sha256": "e537e2b473fd496f752c0b71b2740e4daea4d52f0afb472dc7c06e6a9b8a06f7",
+      "source_member": "LihatDulu/src/media-store.js"
+    },
+    {
+      "path": "app/src/seller.css",
+      "bytes": 18707,
+      "sha256": "77dfefd7856ad3e5b15fcf3c80a68a702821c7f3dec55b380b3abb513a1d3b3b",
+      "source_member": "LihatDulu/src/seller.css"
+    },
+    {
+      "path": "app/src/viewer-state.js",
+      "bytes": 4937,
+      "sha256": "bd7a9fc39958735cc6f910f0ee5fce4fc6f58eb039366736fedbf4d54e255c7c",
+      "source_member": "LihatDulu/src/viewer-state.js"
+    },
+    {
+      "path": "app/src/studio.js",
+      "bytes": 17000,
+      "sha256": "e2d3f6f20b6daa028427c6c0718779a38b4e6f28040fa9cac0d40e551b231509",
+      "source_member": "LihatDulu/src/studio.js"
+    },
+    {
+      "path": "app/src/ui.js",
+      "bytes": 25815,
+      "sha256": "5af58b02c5f2fde997c9eccff233b65ada4d18f140b3c1de29de2a0f89619262",
+      "source_member": "LihatDulu/src/ui.js"
+    },
+    {
+      "path": "app/src/engine.js",
+      "bytes": 23429,
+      "sha256": "96de72872d196b36c1133b771aa08dd02cc070e7a58fb49728c3cca67d61127d",
+      "source_member": "LihatDulu/src/engine.js"
+    },
+    {
+      "path": "app/src/data.js",
+      "bytes": 4631,
+      "sha256": "178c1ac6350c306206c1d399b524c23ca0fc8d0b3a6c99f6cf7f2acb4228e303",
+      "source_member": "LihatDulu/src/data.js"
+    },
+    {
+      "path": "app/src/capture-ui.js",
+      "bytes": 15012,
+      "sha256": "c24ff7378963e9fdb46ac147727cdc780a4814001aff27b0ad338e2eac3e67be",
+      "source_member": "LihatDulu/src/capture-ui.js"
+    },
+    {
+      "path": "app/src/prepared-capture.css",
+      "bytes": 9736,
+      "sha256": "836d772cf06f8135ed8b0680005911045e0bc0b24a026462398ee194ab9e4997",
+      "source_member": "LihatDulu/src/prepared-capture.css"
+    },
+    {
+      "path": "app/src/state.js",
+      "bytes": 11962,
+      "sha256": "de2d97e79aeff4634bd628c4d03f852c58b8f57c9871745390fec2e64d521305",
+      "source_member": "LihatDulu/src/state.js"
+    },
+    {
+      "path": "app/src/main.js",
+      "bytes": 25417,
+      "sha256": "8ae6500854db548db7d609445fd26e04401a56c14691b108ddd42c80da497a09",
+      "source_member": "LihatDulu/src/main.js"
+    },
+    {
+      "path": "app/src/capture-scene.js",
+      "bytes": 17460,
+      "sha256": "928bef037034965a48f89edadfffeff0f48d2425364392f26f2bd44e0702321b",
+      "source_member": "LihatDulu/src/capture-scene.js"
+    },
+    {
+      "path": "app/src/mobile.js",
+      "bytes": 1004,
+      "sha256": "684044cabe5b8a8dad729949fd4dcfbf86dd5b74310742c52a574580ad0d4e5e",
+      "source_member": "LihatDulu/src/mobile.js"
+    },
+    {
+      "path": "app/src/inspection.js",
+      "bytes": 29009,
+      "sha256": "29a50cb894022c2326ac9865d5f29d11835b44599e946755ce50ce531ba98a1b",
+      "source_member": "LihatDulu/src/inspection.js"
+    },
+    {
+      "path": "app/src/prepared-state.js",
+      "bytes": 2118,
+      "sha256": "92b726064b155822ba291faaa1a1e6ce98c863cccf651960b3467c238c493635",
+      "source_member": "LihatDulu/src/prepared-state.js"
+    },
+    {
+      "path": "app/src/room-presets.js",
+      "bytes": 897,
+      "sha256": "2c1a498dba01cca76aa43707544af04b5705be76ff3baf08509331d8613bf6af",
+      "source_member": "LihatDulu/src/room-presets.js"
+    },
+    {
+      "path": "app/src/style.css",
+      "bytes": 34180,
+      "sha256": "08f0477568c837afde6c68cc14b6aa00f2c1a1b496cd7d2752af99e918fd57e5",
+      "source_member": "LihatDulu/src/style.css"
+    },
+    {
+      "path": "app/src/geometry.js",
+      "bytes": 5095,
+      "sha256": "06b3b18c8fbb8bd6b9f17cfa608189d01a32161cf42aa7675ca3762acf150dc1",
+      "source_member": "LihatDulu/src/geometry.js"
+    },
+    {
+      "path": "app/src/shop-state.js",
+      "bytes": 593,
+      "sha256": "3dd2bc22744460bbcfddedf929991a3308ba717f31700195a26b25d529f1a5cd",
+      "source_member": "LihatDulu/src/shop-state.js"
+    },
+    {
+      "path": "app/src/seller.js",
+      "bytes": 29112,
+      "sha256": "a7b6a8420f84635ba16d1093da61c0e4a155d61a85a802f3c8d2e4d90020186e",
+      "source_member": "LihatDulu/src/seller.js"
+    },
+    {
+      "path": "app/src/catalogue.js",
+      "bytes": 4350,
+      "sha256": "43d3b86fbef633e992ad435e78ef606de594625995af5536413cea693aea96ad",
+      "source_member": "LihatDulu/src/catalogue.js"
+    },
+    {
+      "path": "app/src/capture.js",
+      "bytes": 10193,
+      "sha256": "6c27bedbd7e7a267e0765e9d767c8eb65f51d9233f2e166dc72b6c2a348ee7fa",
+      "source_member": "LihatDulu/src/capture.js"
+    },
+    {
+      "path": "app/src/prepared-capture.js",
+      "bytes": 10460,
+      "sha256": "7c077f304643c0fa0fd0f13098a4af39800659fdd7b3d91663edcacbc8a4dd77",
+      "source_member": "LihatDulu/src/prepared-capture.js"
+    },
+    {
+      "path": "app/docs/MASTER_AI_CONTEXT.md",
+      "bytes": 291568,
+      "sha256": "50cd2e004cccfd03b6df73e7746c0aad81974b3f704c86a5466a92e2dcd49de1",
+      "source_member": "LihatDulu/docs/MASTER_AI_CONTEXT.md"
+    },
+    {
+      "path": "app/docs/asset-provenance.md",
+      "bytes": 6269,
+      "sha256": "30a58634d6a8e5670e0a550c850f9e6b19ef0515f9d41b30b50c3eccbd47ee9a",
+      "source_member": "LihatDulu/docs/asset-provenance.md"
+    }
+  ]
+}

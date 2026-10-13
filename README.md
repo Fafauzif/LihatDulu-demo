@@ -1,78 +1,40 @@
-# LihatDulu
+# LihatDulu master implementation pack
 
-A furniture marketplace concept built around one interactive Sora cabinet. It opens with a buyer or seller choice, then gives buyers a curated catalogue with Sora as the first fully interactive item. The interface is in Indonesian.
+This pack contains the complete V5.1 website baseline and the approved specifications for its next redesign.
 
-## Deploy on Vercel
+## Start
 
-1. Extract the ZIP and use its `LihatDulu` folder as the project root.
-2. Import that folder's contents into your Git repository and connect the repository to Vercel, or deploy the folder with the Vercel CLI.
-3. Select Vite if framework detection asks. Build with `npm run build` and use `dist` as the output directory. The included `vercel.json` contains these settings and the rewrite needed for direct entry and refresh on application routes.
+Upload the ZIP into a code-enabled AI conversation or extract it into a coding workspace. Use this instruction:
 
-No environment variables, API keys, backend services or application accounts are required. The ZIP includes source, locked dependencies, local assets and a prebuilt `dist` folder. Install dependencies from the source folder before rebuilding.
+> Extract this pack, read START_HERE.md, and implement the approved LihatDulu redesign. Follow its reading order, deliverable requirements and demanding review loop. Begin with the embedded app/ baseline. Do not stop at another plan. Ask only about unresolved material decisions.
 
-## Local development
+START_HERE.md is the controlling entry point. It identifies what to read and what to produce. AGENTS.md provides the same routing for repository-style agents.
 
-Use Node.js 24 or later.
+## Included
 
-```bash
-npm ci
-npm run dev
-```
+- Complete supplied website source, tests, assets, dependencies manifest, lockfile, configuration and prebuilt dist/ under app/.
+- Approved product, brand, marketplace, 3D, mobile and prepared-experience specifications.
+- Adapted review and finished-deliverable instructions with concrete acceptance criteria.
+- Thirty original Etsy reference PNGs and a selection/provenance index.
+- The supplied fourteen-page brand-reference PDF.
+- Selected upstream design/browser guidance and source links.
+- Current context plus optional historical source documents.
+- Source/reference manifests and a reproducible package-verification script.
 
-```bash
-npm run build
-npm run preview
-```
+The proposed redesign has not been implemented inside this pack. The embedded app remains the unchanged V5.1 baseline. New models, branding and presentation outputs are deliverables for the implementing model.
 
-## Explore the product
+## Approved core
 
-- `/` opens the role chooser. Choose **Beli furnitur** for the buyer marketplace or **Jual furnitur** for the prepared seller walkthrough.
-- `/beli` opens the buyer marketplace. Lemari Sora appears first with the live 3D badge. The other catalogue cards are honest placeholders using supplied example images, and each opens Sora because it is the only item with a complete interactive product experience in this release.
-- `/barang/sora` opens Sora's live 3D view. Rotate it, select an angle, and open either door or the drawer independently.
-- `/barang/sora?tab=condition` opens the same cabinet with its three condition notes. Each note links a model position to a matching close-up image.
-- `/barang/sora?tab=room` offers three prepared room layouts. Separate checks show whether the cabinet body, doors and drawer have clearance. Custom dimensions and positions are optional.
-- `/jual` explains the photography idea using six supplied Sora images. Choose a view, press the shutter, retake, review, restart or undo. It never opens a camera, requests media permission or asks for an upload.
-- `/tersimpan` shows Sora after it is saved. Saved favourites and room positions remain local to the browser and origin.
-- `/checkout/sora` offers pickup or delivery and a payment-method choice without requiring personal information. `/checkout/sora/tinjau` reviews those choices. It does not submit an order or take payment.
+Four available demonstration products, two coming soon, preserved buyer/seller gateway, prepared seller workspace, Sora-only immersive capture, predetermined-object visual search, original brand reinvention and adaptive mobile 3D.
 
-The prepared photography selection uses separate session state. Restarting it does not delete photographs or drafts left by an earlier version. `/buat` and `/barang-saya` open the same prepared walkthrough.
+Mobile performance on weaker devices is a release requirement. Claim only results supported by documented testing.
 
-## Verification
+## Package verification
 
-```bash
-npm test
-npm run build
-npm run test:production
-```
+Run python tools/verify_pack.py from the extracted root. It checks file hashes, baseline identity, thirty reference images, source assets and required specifications. It does not test or certify the future redesign.
 
-The unit checks cover state validation, cabinet geometry, persistence, prepared photography state, room presets and checkout arithmetic. The integrated browser suite exercises actual 3D camera positions and moving cabinet parts, prepared capture, room results, saving, keyboard interactions, checkout and layouts from 320 to 1920 pixels. It blocks and counts media-permission and file-opening attempts while checking the served application code for the removed upload workflow.
+PACK_VALIDATION.json records the assembly check. Historical application QA is explicitly separated from fresh implementation evidence.
 
-Results and screenshots are written to `qa-output/prepared/` and `qa-output/prepared-production/`. `QA_OUTPUT` changes the output directory. The production suite runs against the compiled static application, including direct routes and refreshes. A command or test description is not itself a pass claim. The current release evidence is recorded in `docs/MASTER_AI_CONTEXT.md`.
+## Reference boundary
 
-On Linux, the test helper uses the included Chromium dependency with software WebGL. On macOS or Windows, install the test browser with `npx playwright install chromium`. `CHROMIUM_PATH` can select a compatible Chromium executable.
-
-Responsive browser checks do not verify every physical device. Native Safari, physical phones and hardware graphics drivers remain separate verification limits.
-
-## Scope and data
-
-This is an interactive product concept with a commercial presentation. Sora, its price, location, wear details, supplied images and model are authored example content. There is one active product and five catalogue placeholders. There are no live sellers, authentication, inventory services, paid orders, payment processing, camera capture, uploads, automatic damage detection, measured reconstruction or Gaussian-splat generation.
-
-The 3D asset is an articulated GLB rendered with Three.js. The supplied photographs and spatial photography scene show that same cabinet. Pressing the prepared shutter selects an existing example frame. It does not create a model or imply a real reconstruction has finished.
-
-Room results use the authored cabinet dimensions and geometry. Imported or saved positions with unconfirmed dimensions remain uncertain and cannot become an unqualified positive fit result. Clearance is a geometric illustration rather than a guarantee for real furniture or rooms.
-
-Pickup totals Rp2.450.000. The example delivery fee is Rp150.000, giving a total of Rp2.600.000. Payment options affect the review presentation only.
-
-## Source and assets
-
-- `src/main.js`: role chooser, buyer marketplace, single-product routes, saved items, navigation, gallery and checkout.
-- `src/inspection.js` and `src/inspection.css`: the 3D inspection and room interface.
-- `src/prepared-capture.js`, `src/prepared-state.js` and `src/prepared-capture.css`: the prepared photography walkthrough.
-- `src/engine.js`, `src/geometry.js` and `src/room-presets.js`: rendering, cabinet movement and room geometry.
-- `public/`: local cabinet images, GLB, self-hosted font and favicon.
-- `tests/` and `scripts/`: unit and browser verification.
-- `docs/MASTER_AI_CONTEXT.md`: current handoff and explicitly labelled historical context.
-
-Older implementation files and documents may describe retired camera or catalogue flows. The current entry point and the current section of the master context document take precedence.
-
-Three.js and Vite use MIT licences. Plus Jakarta Sans uses the SIL Open Font License. Notices are included in `THIRD_PARTY_LICENSES.txt` and `public/fonts/OFL.txt`.
+Screenshots, the reference PDF, internal prompts and critique records do not belong in the public application export. Use references privately for pattern study and original design production.
