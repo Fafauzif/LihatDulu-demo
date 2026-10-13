@@ -6,7 +6,54 @@ import { createCaptureScene } from './capture-scene.js';
 import { validateViewState } from './viewer-state.js';
 import { validatePlacementPreview } from './state.js';
 
-export async function createEngine(container,{onCondition=()=>{},onPlacement=()=>{},onInteraction=()=>{},onLoadProgress=()=>{}}={}) {
+const productMaterials={
+  walnut:new THREE.MeshStandardMaterial({color:0x7f5b45,roughness:.7,metalness:.02}),
+  oak:new THREE.MeshStandardMaterial({color:0xc6965d,roughness:.76,metalness:.01}),
+  sage:new THREE.MeshStandardMaterial({color:0x6f8067,roughness:.72,metalness:.02}),
+  ink:new THREE.MeshStandardMaterial({color:0x243833,roughness:.66,metalness:.03}),
+  linen:new THREE.MeshStandardMaterial({color:0xd6c8b2,roughness:.92,metalness:0}),
+  brass:new THREE.MeshStandardMaterial({color:0xa88658,roughness:.34,metalness:.42})
+};
+function box(parent,name,size,position,material,rotation=0){
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),material);mesh.name=name;mesh.position.set(...position);mesh.rotation.y=rotation;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
+function cylinder(parent,name,radius,height,position,material,segments=24){
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,height,segments),material);mesh.name=name;mesh.position.set(...position);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
+function createProceduralProduct(type='arca'){
+  const root=new THREE.Group();root.name=`${type}_model`;
+  const body=new THREE.Group();body.name='body';root.add(body);
+  const left=new THREE.Group();left.name='left_door_pivot';root.add(left);
+  const right=new THREE.Group();right.name='right_door_pivot';root.add(right);
+  const drawer=new THREE.Group();drawer.name='drawer_slide';root.add(drawer);
+  const motion=[];let parts=[];
+  if(type==='batu'){
+    box(body,'tabletop',[1.22,.12,.78],[0,.78,0],productMaterials.walnut);
+    for(const [i,x] of [[0,-.5],[1,.5]])for(const z of [-.27,.27])parts.push(box(body,`leg_${i}_${z}`,[.1,.78,.1],[x,.39,z],productMaterials.ink));
+    parts.push(box(body,'shelf',[.84,.08,.38],[0,.27,0],productMaterials.brass));
+  }else if(type==='rimba'){
+    parts.push(box(body,'sideboard_body',[1.32,.74,.42],[0,.55,0],productMaterials.sage));
+    for(const x of [-.38,.38]){const pivot= x<0?left:right;pivot.position.set(x,0,.23);parts.push(box(pivot,x<0?'door_left':'door_right',[.52,.57,.035],[0,.55,0],productMaterials.oak));cylinder(pivot,'knob',.022,.04,[x<0?.18:-.18,.56,.03],productMaterials.brass,16).rotation.x=Math.PI/2;}
+    for(const x of [-.5,.5])for(const z of [-.12,.12])parts.push(box(body,'foot',[.1,.32,.1],[x,.16,z],productMaterials.ink));
+  }else{
+    box(body,'seat',[.78,.12,.72],[0,.63,0],productMaterials.walnut);
+    box(body,'back',[.78,.68,.1],[0,.98,-.28],productMaterials.oak);
+    for(const x of [-.3,.3])for(const z of [-.26,.26])parts.push(box(body,'leg',[.08,.62,.08],[x,.31,z],productMaterials.ink));
+    box(body,'brace',[.58,.07,.07],[0,.32,0],productMaterials.brass);
+  }
+  const manifest={partIds:parts.map(p=>p.name),motion:[]};
+  if(type==='rimba')manifest.motion=[{nodeId:'left_door_pivot',type:'rotation',axis:'y',openValue:-1.05,pivotM:{x:-.38,y:0,z:0}},{nodeId:'right_door_pivot',type:'rotation',axis:'y',openValue:1.05,pivotM:{x:.38,y:0,z:0}}];
+  else manifest.motion=[];
+  root.traverse(n=>{if(n.isMesh){n.castShadow=true;n.receiveShadow=true;}});
+  return {model:root,manifest};
+}
+function proceduralReport(type){
+  const anchor='body';
+  const cameraPresets={overview:{position:[1.9,1.45,2.45],target:[0,.55,0]},front:{position:[0,1.1,2.7],target:[0,.6,0]},left:{position:[-2.4,1.25,.5],target:[0,.6,0]},rear:{position:[0,1.15,-2.55],target:[0,.6,0]},top:{position:[1.8,3.0,1.8],target:[0,.45,0]},interior:{position:[0,1.0,2.0],target:[0,.72,0]}};
+  return {cameraPresets,conditions:[{id:'scratch',title:'Detail permukaan',localPositionM:[-.22,.7,.22],anchorNodeId:anchor},{id:'chip',title:'Sudut material',localPositionM:[.22,.98,.18],anchorNodeId:anchor},{id:'mark',title:'Bekas pemakaian',localPositionM:[0,.8,0],anchorNodeId:anchor}],partIds:[],motion:[]};
+}
+
+export async function createEngine(container,{onCondition=()=>{},onPlacement=()=>{},onInteraction=()=>{},onLoadProgress=()=>{},listing=null}={}) {
   const progress=value=>{try{onLoadProgress(value);}catch{}};
   progress(0);
   let renderer;
@@ -23,13 +70,23 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
   let model,manifest,report;
   let loadingFinished=false;
   const loaded=[0,0,0],updateLoad=(index,value)=>{if(loadingFinished)return;loaded[index]=value;progress(loaded.some(v=>v===null)?null:Math.min(.99,loaded.reduce((sum,v)=>sum+v,0)/3));};
-  try { [model,manifest,report]=await Promise.all([new GLTFLoader().loadAsync('/assets/cabinet.glb',event=>updateLoad(0,event.lengthComputable&&event.total>0?THREE.MathUtils.clamp(event.loaded/event.total,0,1):null)).then(g=>{updateLoad(0,1);return g.scene;}),...['cabinet-manifest.json','cabinet-report.json'].map(async (name,index)=>{const r=await fetch('/assets/'+name);if(!r.ok)throw Error('Asset '+name+' gagal dimuat');const value=await r.json();updateLoad(index+1,1);return value;})]); }
+  try {
+    const asset=listing?.asset;
+    if(asset?.modelUrl&&asset?.manifestUrl&&asset?.reportUrl){
+      [model,manifest,report]=await Promise.all([new GLTFLoader().loadAsync(asset.modelUrl,event=>updateLoad(0,event.lengthComputable&&event.total>0?THREE.MathUtils.clamp(event.loaded/event.total,0,1):null)).then(g=>{updateLoad(0,1);return g.scene;}),...[asset.manifestUrl,asset.reportUrl].map(async (url,index)=>{const r=await fetch(url);if(!r.ok)throw Error('Asset gagal dimuat');const value=await r.json();updateLoad(index+1,1);return value;})]);
+    }else if(listing?.id&&listing.id!=='sora'){
+      const generated=createProceduralProduct(listing.modelType||listing.id);model=generated.model;manifest=generated.manifest;report=proceduralReport(listing.modelType||listing.id);updateLoad(0,1);updateLoad(1,1);updateLoad(2,1);
+    }else{
+      [model,manifest,report]=await Promise.all([new GLTFLoader().loadAsync('/assets/cabinet.glb',event=>updateLoad(0,event.lengthComputable&&event.total>0?THREE.MathUtils.clamp(event.loaded/event.total,0,1):null)).then(g=>{updateLoad(0,1);return g.scene;}),...['cabinet-manifest.json','cabinet-report.json'].map(async (name,index)=>{const r=await fetch('/assets/'+name);if(!r.ok)throw Error('Asset '+name+' gagal dimuat');const value=await r.json();updateLoad(index+1,1);return value;})]);
+    }
+  }
   catch(error){loadingFinished=true;progress(null);controls.dispose();ground.geometry.dispose();ground.material.dispose();key.shadow.map?.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();throw error;}
   model.traverse(n=>{if(n.isMesh){n.castShadow=!n.name.startsWith('wear_');n.receiveShadow=true;if(n.material.transparent)n.material.depthWrite=false;}});scene.add(model);
   const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
   let markerVisibility=false,selected=null,view='overview',active=false,dimensionVisible=false,disposed=false,cameraMove=null,raf,drag=null;
   const captureState={active:false,phase:'prepare',area:'front',progress:0};
   const motions={left:0,right:0,drawer:0}, motionAnimations=new Map();
+  for(const name of ['left_door_pivot','right_door_pivot','drawer_slide']) if(!model.getObjectByName(name)){const empty=new THREE.Group();empty.name=name;model.add(empty);}
   const nodes={left:model.getObjectByName('left_door_pivot'),right:model.getObjectByName('right_door_pivot'),drawer:model.getObjectByName('drawer_slide')};
   const bases=Object.fromEntries(Object.entries(nodes).map(([k,n])=>[k,{position:n.position.clone(),rotation:n.rotation.clone()}]));
   const roomState={width:3.2,depth:3,x:0,z:-.4,rotation:0,fixture:'clear'};

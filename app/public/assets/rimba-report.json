@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "productId": "rimba",
+  "cameraPresets": {
+    "overview": {
+      "position": [
+        1.9,
+        1.45,
+        2.45
+      ],
+      "target": [
+        0,
+        0.5,
+        0
+      ]
+    },
+    "front": {
+      "position": [
+        0,
+        1.05,
+        2.7
+      ],
+      "target": [
+        0,
+        0.5,
+        0
+      ]
+    },
+    "left": {
+      "position": [
+        -2.4,
+        1.2,
+        0.5
+      ],
+      "target": [
+        0,
+        0.5,
+        0
+      ]
+    },
+    "rear": {
+      "position": [
+        0,
+        1.05,
+        -2.6
+      ],
+      "target": [
+        0,
+        0.5,
+        0
+      ]
+    },
+    "top": {
+      "position": [
+        1.8,
+        2.8,
+        1.8
+      ],
+      "target": [
+        0,
+        0.4,
+        0
+      ]
+    },
+    "interior": {
+      "position": [
+        0,
+        1,
+        2
+      ],
+      "target": [
+        0,
+        0.5,
+        0
+      ]
+    }
+  },
+  "conditions": [],
+  "partIds": [],
+  "motion": []
+}

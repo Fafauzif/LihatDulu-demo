@@ -1,0 +1,9 @@
+{
+  "name": "lihatdulu-demo",
+  "private": true,
+  "version": "5.1.0",
+  "scripts": {
+    "build": "npm --prefix app ci && npm --prefix app run build",
+    "test": "npm --prefix app test"
+  }
+}
