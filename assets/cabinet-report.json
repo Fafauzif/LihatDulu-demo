@@ -1,0 +1,217 @@
+{
+  "provenance": "Authored demonstration imagery",
+  "conditions": [
+    {
+      "id": "scratch",
+      "partId": "left_door",
+      "anchorNodeId": "left_door_pivot",
+      "localPositionM": [
+        0.23,
+        0.1915,
+        0.00025
+      ],
+      "label": "Surface scratch",
+      "description": "Example 110 mm surface scratch on the left door.",
+      "previewKey": "scratch",
+      "sizeMM": [
+        110,
+        1
+      ]
+    },
+    {
+      "id": "chip",
+      "partId": "right_side",
+      "anchorNodeId": "right_side",
+      "localPositionM": [
+        0.446,
+        1.1995,
+        0.19
+      ],
+      "label": "Edge chip",
+      "description": "Example 8 \u00d7 5 \u00d7 1 mm chip on the upper front-right edge.",
+      "previewKey": "chip",
+      "sizeMM": [
+        8,
+        5,
+        1
+      ]
+    },
+    {
+      "id": "mark",
+      "partId": "top_panel",
+      "anchorNodeId": "top_panel",
+      "localPositionM": [
+        0,
+        1.2002,
+        -0.02
+      ],
+      "label": "Surface mark",
+      "description": "Example faint 55 mm ring-shaped surface mark on the top.",
+      "previewKey": "mark",
+      "sizeMM": [
+        55
+      ]
+    }
+  ],
+  "cameraPresets": {
+    "overview": {
+      "position": [
+        1.65,
+        1.65,
+        2.5
+      ],
+      "target": [
+        0,
+        0.62,
+        0
+      ]
+    },
+    "front-left": {
+      "position": [
+        -1.65,
+        1.65,
+        2.5
+      ],
+      "target": [
+        0,
+        0.62,
+        0
+      ]
+    },
+    "front-right": {
+      "position": [
+        1.65,
+        1.65,
+        2.5
+      ],
+      "target": [
+        0,
+        0.62,
+        0
+      ]
+    },
+    "front": {
+      "position": [
+        0,
+        0.7,
+        2.9
+      ],
+      "target": [
+        0,
+        0.62,
+        0
+      ]
+    },
+    "rear": {
+      "position": [
+        -1.45,
+        1.4,
+        -2.3
+      ],
+      "target": [
+        0,
+        0.62,
+        0
+      ]
+    },
+    "left": {
+      "position": [
+        -2.7,
+        1.0,
+        0.5
+      ],
+      "target": [
+        0,
+        0.62,
+        0
+      ]
+    },
+    "right": {
+      "position": [
+        2.7,
+        1.0,
+        0.5
+      ],
+      "target": [
+        0,
+        0.62,
+        0
+      ]
+    },
+    "top": {
+      "position": [
+        1.0,
+        2.7,
+        0.95
+      ],
+      "target": [
+        0,
+        0.95,
+        0
+      ]
+    },
+    "interior": {
+      "position": [
+        0,
+        1.45,
+        2.7
+      ],
+      "target": [
+        0,
+        0.75,
+        0
+      ]
+    },
+    "drawer": {
+      "position": [
+        0.7,
+        2.0,
+        1.7
+      ],
+      "target": [
+        0,
+        1.1,
+        0.2
+      ]
+    }
+  },
+  "renderedViewFiles": {
+    "front": "previews/capture-front.png",
+    "front-left": "previews/capture-front-left.png",
+    "front-right": "previews/capture-front-right.png",
+    "left": "previews/capture-left.png",
+    "right": "previews/capture-right.png",
+    "rear": "previews/capture-rear.png",
+    "top": "previews/capture-top.png",
+    "interior": "previews/capture-interior.png",
+    "drawer": "previews/capture-drawer.png",
+    "underside": "previews/capture-underside.png",
+    "scratch": "previews/wear-scratch.png",
+    "chip": "previews/wear-chip.png",
+    "mark": "previews/wear-mark.png"
+  },
+  "coverageFixtures": {
+    "complete": {
+      "front": "documented",
+      "left": "documented",
+      "right": "documented",
+      "rear": "documented",
+      "top": "documented",
+      "interior": "documented",
+      "drawer": "documented",
+      "rear-lower": "documented",
+      "underside": "documented"
+    },
+    "incomplete": {
+      "front": "documented",
+      "left": "documented",
+      "right": "documented",
+      "rear": "documented",
+      "top": "documented",
+      "interior": "documented",
+      "drawer": "documented",
+      "rear-lower": "missing",
+      "underside": "missing"
+    }
+  }
+}
