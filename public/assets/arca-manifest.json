@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "productId": "arca",
+  "units": "metres",
+  "coordinateSystem": "Y up, front +Z, floor origin at Y=0",
+  "dimensions": {
+    "width": 0.68,
+    "depth": 0.72,
+    "height": 0.78
+  },
+  "partIds": [
+    "seat",
+    "woven_seat",
+    "back",
+    "leg",
+    "leg",
+    "leg",
+    "leg",
+    "brace"
+  ],
+  "motion": [],
+  "capabilities": {
+    "articulation": false,
+    "conditions": false,
+    "room": true,
+    "capture": false
+  }
+}
