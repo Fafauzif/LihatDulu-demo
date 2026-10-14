@@ -6,6 +6,81 @@ import { createCaptureScene } from './capture-scene.js';
 import { validateViewState } from './viewer-state.js';
 import { validatePlacementPreview } from './state.js';
 
+const MOTION_NODES = { left: 'left_door_pivot', right: 'right_door_pivot', drawer: 'drawer_slide' };
+
+// Measure the retained physical meshes, not catalogue-era cabinet constants.
+// GLTFLoader uniquifies repeated names (leg, leg_1, ...); include every such part.
+export function getProductGeometry(model, sourceManifest = {}) {
+  const physical = [];
+  model.traverse(node => { if (node.isMesh && !node.name.startsWith('wear_')) physical.push(node); });
+  const used = new Set();
+  physical.forEach((node, index) => {
+    let name = node.name || `physical_${index}`;
+    while (used.has(name)) name += `_${index}`;
+    node.name = name; used.add(name);
+  });
+  const motion = (sourceManifest.motion || []).filter(value => model.getObjectByName(value.nodeId) && ['rotation', 'translation'].includes(value.type) && ['x', 'y', 'z'].includes(value.axis) && Number.isFinite(value.openValue)).map(value => {
+    const node = model.getObjectByName(value.nodeId);
+    return { ...value, closedValue: value.closedValue || 0, pivotM: Array.isArray(value.pivotM) ? [...value.pivotM] : node.position.toArray() };
+  });
+  const saved = motion.map(value => { const node = model.getObjectByName(value.nodeId); return { node, position: node.position.clone(), rotation: node.rotation.clone() }; });
+  const bounds = new THREE.Box3();
+  try {
+    motion.forEach((value, index) => { const node = saved[index].node; if (value.type === 'rotation') node.rotation[value.axis] = value.closedValue; else node.position[value.axis] = value.pivotM[{ x: 0, y: 1, z: 2 }[value.axis]] + value.closedValue; });
+    model.updateMatrixWorld(true);
+    const inverse = model.matrixWorld.clone().invert();
+    for (const node of physical) {
+      node.geometry.computeBoundingBox();
+      const box = node.geometry.boundingBox, matrix = new THREE.Matrix4().multiplyMatrices(inverse, node.matrixWorld);
+      for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) bounds.expandByPoint(new THREE.Vector3(x, y, z).applyMatrix4(matrix));
+    }
+  } finally { saved.forEach(({ node, position, rotation }) => { node.position.copy(position); node.rotation.copy(rotation); }); model.updateMatrixWorld(true); }
+  const size = bounds.getSize(new THREE.Vector3()), roundCm = value => Math.round(value * 1000) / 10;
+  const motionLimits = {};
+  for (const [kind, nodeId] of Object.entries(MOTION_NODES)) {
+    const value = motion.find(entry => entry.nodeId === nodeId);
+    if (!value) continue;
+    motionLimits[kind] = { nodeId, type: value.type, axis: value.axis, direction: Math.sign(value.openValue) || 1, max: value.type === 'rotation' ? THREE.MathUtils.radToDeg(Math.abs(value.openValue)) : Math.abs(value.openValue) };
+  }
+  return { bounds, dimensions: { width: roundCm(size.x), depth: roundCm(size.z), height: roundCm(size.y) }, manifest: { ...sourceManifest, partIds: physical.map(node => node.name), motion }, motionLimits };
+}
+
+export function productDimensionGuides({ bounds, dimensions }) {
+  const { min, max } = bounds, gap = Math.max(.08, (max.x - min.x) * .1), low = min.y + .03;
+  return [
+    { key: 'width', start: new THREE.Vector3(min.x, low, max.z + gap), end: new THREE.Vector3(max.x, low, max.z + gap) },
+    { key: 'height', start: new THREE.Vector3(max.x + gap, min.y, max.z), end: new THREE.Vector3(max.x + gap, max.y, max.z) },
+    { key: 'depth', start: new THREE.Vector3(min.x - gap, low, min.z), end: new THREE.Vector3(min.x - gap, low, max.z) }
+  ].map(value => ({ ...value, label: `${dimensions[value.key].toLocaleString('id-ID')} cm` }));
+}
+
+export function getProductFixture(model, geometry, kind, state = { x: 0, z: -.4, rotation: 0 }) {
+  const motionKind = kind === 'door' ? geometry.motionLimits.left ? 'left' : 'right' : kind === 'drawer' ? 'drawer' : null;
+  const limit = geometry.motionLimits[motionKind];
+  if (!limit) return null;
+  // Keep the established Sora scenarios and their independently checked outcomes.
+  if (geometry.manifest.id === 'oak-cabinet-01') return kind === 'door' ? { center: new THREE.Vector3(-.30, .62, -.02), size: new THREE.Vector3(.14, .24, .1) } : { center: new THREE.Vector3(0, 1.09, .075), size: new THREE.Vector3(.24, .1, .15) };
+  const node = model.getObjectByName(limit.nodeId), rootPosition = model.position.clone(), rootRotation = model.rotation.clone(), position = node.position.clone(), rotation = node.rotation.clone();
+  try {
+    model.position.set(state.x || 0, 0, state.z || 0); model.rotation.y = THREE.MathUtils.degToRad(state.rotation || 0);
+    const definition = geometry.manifest.motion.find(value => value.nodeId === limit.nodeId);
+    if (limit.type === 'rotation') node.rotation[limit.axis] = definition.openValue * .8; else node.position[limit.axis] = definition.pivotM[{ x: 0, y: 1, z: 2 }[limit.axis]] + definition.openValue * .8;
+    model.updateMatrixWorld(true);
+    const inverse = model.matrixWorld.clone().invert();
+    let candidate = null;
+    node.traverse(part => {
+      if (!part.isMesh || !geometry.manifest.partIds.includes(part.name)) return;
+      part.geometry.computeBoundingBox(); const box = part.geometry.boundingBox, center = box.getCenter(new THREE.Vector3());
+      for (const x of [box.min.x, box.max.x]) for (const z of [box.min.z, box.max.z]) {
+        const point = new THREE.Vector3(x, center.y, z).lerp(center, .08).applyMatrix4(part.matrixWorld).applyMatrix4(inverse);
+        if (!candidate || point.z > candidate.z) candidate = point;
+      }
+    });
+    if (!candidate) return null;
+    return { center: candidate.applyMatrix4(model.matrixWorld), size: new THREE.Vector3(.04, .12, .04) };
+  } finally { model.position.copy(rootPosition); model.rotation.copy(rootRotation); node.position.copy(position); node.rotation.copy(rotation); model.updateMatrixWorld(true); }
+}
+
 const productMaterials={
   walnut:new THREE.MeshStandardMaterial({color:0x7f5b45,roughness:.7,metalness:.02}),
   oak:new THREE.MeshStandardMaterial({color:0xc6965d,roughness:.76,metalness:.01}),
@@ -85,9 +160,10 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
   const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
   let markerVisibility=false,selected=null,view='overview',active=false,dimensionVisible=false,disposed=false,cameraMove=null,raf,drag=null;
   const captureState={active:false,phase:'prepare',area:'front',progress:0};
+  const productGeometry=getProductGeometry(model,manifest);manifest=productGeometry.manifest;
+  const motionLimits=productGeometry.motionLimits;
   const motions={left:0,right:0,drawer:0}, motionAnimations=new Map();
-  for(const name of ['left_door_pivot','right_door_pivot','drawer_slide']) if(!model.getObjectByName(name)){const empty=new THREE.Group();empty.name=name;model.add(empty);}
-  const nodes={left:model.getObjectByName('left_door_pivot'),right:model.getObjectByName('right_door_pivot'),drawer:model.getObjectByName('drawer_slide')};
+  const nodes=Object.fromEntries(Object.entries(motionLimits).map(([kind,value])=>[kind,model.getObjectByName(value.nodeId)]));
   const bases=Object.fromEntries(Object.entries(nodes).map(([k,n])=>[k,{position:n.position.clone(),rotation:n.rotation.clone()}]));
   const roomState={width:3.2,depth:3,x:0,z:-.4,rotation:0,fixture:'clear'};
   const room=createRoom({...roomState,height:2.6});room.group.visible=false;scene.add(room.group);
@@ -97,23 +173,23 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
   const dimensions=new THREE.Group();model.add(dimensions);dimensions.visible=false;
   const lineMaterial=new THREE.LineBasicMaterial({color:0x557d69});
   const labels=[];
-  for(const [path,text] of [[[[-.45,.03,.33],[.45,.03,.33]],'90 cm'],[[[.55,0,.22],[.55,1.2,.22]],'120 cm'],[[[-.55,.03,-.2375],[-.55,.03,.2375]],'47,5 cm']]) { dimensions.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(path.map(p=>new THREE.Vector3(...p))),lineMaterial));for(const p of path){const v=new THREE.Vector3(...p);dimensions.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([v.clone().addScalar(.009),v.clone().addScalar(-.009)]),lineMaterial))}const point=new THREE.Object3D();point.position.fromArray(path[0]).add(new THREE.Vector3(...path[1])).multiplyScalar(.5);dimensions.add(point);const el=document.createElement('span');el.className='dimension-label';el.textContent=text;el.hidden=true;container.append(el);labels.push({point,el});}
+  for(const guide of productDimensionGuides(productGeometry)) { const path=[guide.start,guide.end];dimensions.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(path),lineMaterial));for(const v of path)dimensions.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([v.clone().addScalar(.009),v.clone().addScalar(-.009)]),lineMaterial));const point=new THREE.Object3D();point.position.copy(guide.start).add(guide.end).multiplyScalar(.5);dimensions.add(point);const el=document.createElement('span');el.className='dimension-label';el.textContent=guide.label;el.hidden=true;container.append(el);labels.push({point,el});}
   function moveCamera(position,target,instant=false){cameraMove={start:performance.now(),from:camera.position.clone(),to:position,targetFrom:controls.target.clone(),targetTo:target,duration:instant||reduced()?0:650};if(!cameraMove.duration){camera.position.copy(position);controls.target.copy(target);cameraMove=null;controls.update();}}
   function fit(position,target){const offset=position.clone().sub(target);if(camera.aspect<1)offset.multiplyScalar(Math.max(1,1/camera.aspect*.85));return offset.add(target)}
   function selectCondition(id){if(id&&captureState.active)deactivateCapture();const m=markers.find(m=>m.condition.id===id);selected=m? id:null;onCondition(selected);if(!m)return;model.updateMatrixWorld(true);const target=m.point.getWorldPosition(new THREE.Vector3());const offset=id==='scratch'?new THREE.Vector3(.12,.08,.38):id==='chip'?new THREE.Vector3(.12,.09,.12):new THREE.Vector3(.07,.28,.08);offset.applyQuaternion(m.point.parent.getWorldQuaternion(new THREE.Quaternion()));moveCamera(fit(target.clone().add(offset),target),target);}
   function setView(preset='overview',instant=false){if(captureState.active)deactivateCapture();view=preset;selectCondition(null);const p=preset==='underside'?{position:[1.3,-.75,1.9],target:[0,.18,0]}:report.cameraPresets[preset==='rear-lower'?'rear':preset]||report.cameraPresets.overview;ground.visible=!active&&preset!=='underside';if(preset==='interior')setStorage(true);if(preset==='drawer')setMotion('drawer',.3);const target=new THREE.Vector3().fromArray(p.target),position=new THREE.Vector3().fromArray(p.position);moveCamera(fit(position,target),target,instant);}
-  function applyMotion(kind,value){const n=nodes[kind],b=bases[kind];if(kind==='drawer')n.position.z=b.position.z+value;else n.rotation.y=b.rotation.y+THREE.MathUtils.degToRad(value*(kind==='left'?-1:1));}
-  function setMotion(kind,value){if(!nodes[kind])return;value=THREE.MathUtils.clamp(Number(value)||0,0,kind==='drawer'?.3:100);motions[kind]=value;if(reduced()){motionAnimations.delete(kind);applyMotion(kind,value);model.updateMatrixWorld(true);}else motionAnimations.set(kind,{start:performance.now(),from:kind==='drawer'?nodes[kind].position.z-bases[kind].position.z:THREE.MathUtils.radToDeg(nodes[kind].rotation.y-bases[kind].rotation.y)*(kind==='left'?-1:1),to:value,duration:500});if(selected)selectCondition(null);}
-  function setStorage(open){for(const kind of Object.keys(nodes))setMotion(kind,open?(kind==='drawer'?.3:100):0);}
+  function applyMotion(kind,value){const n=nodes[kind],b=bases[kind],limit=motionLimits[kind];if(!n)return;if(limit.type==='translation')n.position[limit.axis]=b.position[limit.axis]+value*limit.direction;else n.rotation[limit.axis]=b.rotation[limit.axis]+THREE.MathUtils.degToRad(value*limit.direction);}
+  function setMotion(kind,value){if(!nodes[kind])return;const limit=motionLimits[kind];value=THREE.MathUtils.clamp(Number(value)||0,0,limit.max);motions[kind]=value;if(reduced()){motionAnimations.delete(kind);applyMotion(kind,value);model.updateMatrixWorld(true);}else motionAnimations.set(kind,{start:performance.now(),from:limit.type==='translation'?(nodes[kind].position[limit.axis]-bases[kind].position[limit.axis])*limit.direction:THREE.MathUtils.radToDeg(nodes[kind].rotation[limit.axis]-bases[kind].rotation[limit.axis])*limit.direction,to:value,duration:500});if(selected)selectCondition(null);}
+  function setStorage(open){for(const kind of Object.keys(nodes))setMotion(kind,open?motionLimits[kind].max:0);}
   function placement(){model.position.set(roomState.x,0,roomState.z);model.rotation.y=THREE.MathUtils.degToRad(roomState.rotation);model.updateMatrixWorld(true);const result=evaluatePlacement({bounds:room.bounds,model,manifest,obstacles:boxes});onPlacement({state:{...roomState},result});return result;}
   function configureFixture(id){
-    roomState.fixture=id;boxes=[];obstacle.visible=false;setStorage(false);
+    const fixture=getProductFixture(model,productGeometry,id,roomState);
+    roomState.fixture=(id==='door'||id==='drawer')&&!fixture?'clear':id;boxes=[];obstacle.visible=false;setStorage(false);
     if(id==='door'||id==='drawer'){
-      const size=id==='door'?new THREE.Vector3(.14,.24,.1):new THREE.Vector3(.24,.1,.15);
-      const center=id==='door'?new THREE.Vector3(-.30,.62,-.02):new THREE.Vector3(0,1.09,.075);
+      if(!fixture)return;const {size,center}=fixture;
       obstacle.position.copy(center);obstacle.scale.copy(size);obstacle.visible=active;
       boxes=[new THREE.Box3(center.clone().sub(size.clone().multiplyScalar(.5)),center.clone().add(size.clone().multiplyScalar(.5)))];
-      setMotion(id==='door'?'left':'drawer',id==='door'?60:.3);
+      const kind=id==='door'?(nodes.left?'left':'right'):'drawer';setMotion(kind,id==='door'?Math.min(60,motionLimits[kind].max):motionLimits[kind].max);
     }
   }
   function setRoom(patch={}){
@@ -151,6 +227,7 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
     return {position:pose.target.clone().add(offset),target:pose.target};
   }
   function setCaptureScene({phase='prepare',area='front',progress=0}={}){
+    if(listing?.capabilities?.capture===false)return false;
     const first=!captureState.active;
     active=false;room.group.visible=false;obstacle.visible=false;end();
     captureState.active=true;captureState.phase=['prepare','exterior','interior','review'].includes(phase)?phase:'prepare';
@@ -159,7 +236,7 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
     selected=null;onCondition(null);dimensionVisible=false;dimensions.visible=false;labels.forEach(l=>{l.el.hidden=true;l.el.style.display='none'});markers.forEach(m=>{m.button.hidden=true;m.button.style.display='none'});
     model.position.set(0,0,0);model.rotation.y=0;ground.visible=false;controls.enabled=false;
     // Outside recording stays stationary. Opening happens only in the separate interior phase.
-    motionAnimations.clear();for(const kind of Object.keys(nodes)){const value=captureState.phase==='interior'?(kind==='drawer'?.3:100):0;motions[kind]=value;applyMotion(kind,value);}
+    motionAnimations.clear();for(const kind of Object.keys(nodes)){const value=captureState.phase==='interior'?motionLimits[kind].max:0;motions[kind]=value;applyMotion(kind,value);}
     model.updateMatrixWorld(true);captureScene.setState(captureState,report,first);
     const pose=capturePose();if(pose)moveCamera(pose.position,pose.target,first&&reduced());
   }
@@ -172,6 +249,7 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
   function stopOrbit(){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();controls.enableDamping=damping;}
   function restoreViewState(input){
     let snapshot;try{snapshot=validateViewState(input);}catch{return false;}
+    if(snapshot.captureScene.active&&listing?.capabilities?.capture===false)return false;
     if(disposed)return false;
     end();cameraMove=null;motionAnimations.clear();stopOrbit();
     if(captureState.active)deactivateCapture();
@@ -182,8 +260,8 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
       controls.enabled=true;ground.visible=!active&&snapshot.view!=='underside';obstacle.visible=active&&boxes.length>0;
       model.position.set(active?roomState.x:0,0,active?roomState.z:0);model.rotation.y=active?THREE.MathUtils.degToRad(roomState.rotation):0;
     }
-    cameraMove=null;motionAnimations.clear();view=snapshot.view;selected=snapshot.condition;onCondition(selected);
-    for(const kind of Object.keys(nodes)){motions[kind]=snapshot.motions[kind];applyMotion(kind,motions[kind]);}
+    cameraMove=null;motionAnimations.clear();view=snapshot.view;selected=markers.some(marker=>marker.condition.id===snapshot.condition)?snapshot.condition:null;onCondition(selected);
+    for(const kind of Object.keys(motions)){motions[kind]=nodes[kind]?THREE.MathUtils.clamp(snapshot.motions[kind],0,motionLimits[kind].max):0;if(nodes[kind])applyMotion(kind,motions[kind]);}
     dimensionVisible=snapshot.dimensionsVisible;dimensions.visible=dimensionVisible;
     camera.position.fromArray(snapshot.camera.position);controls.target.fromArray(snapshot.camera.target);camera.lookAt(controls.target);camera.updateMatrixWorld();model.updateMatrixWorld(true);
     if(active)room.setNearWallHidden(true,camera.position);
@@ -232,5 +310,5 @@ export async function createEngine(container,{onCondition=()=>{},onPlacement=()=
   raf=requestAnimationFrame(render);
   function dispose(){if(disposed)return;disposed=true;cancelAnimationFrame(raf);observer.disconnect();end();for(const [event,fn] of [['pointerdown',down],['pointermove',move],['pointerup',end],['pointercancel',end]])canvas.removeEventListener(event,fn);controls.removeEventListener('start',interaction);controls.dispose();markers.forEach(m=>m.button.remove());labels.forEach(l=>l.el.remove());captureScene.dispose();const geometries=new Set(),materials=new Set(),textures=new Set();scene.traverse(n=>{if(n.geometry)geometries.add(n.geometry);for(const m of Array.isArray(n.material)?n.material:n.material?[n.material]:[]){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());key.shadow.map?.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();}
   loadingFinished=true;progress(1);
-  return {ready:true,model,manifest,report,camera,controls,scene,renderer,setView,selectCondition,setStorage,setMotion,setCaptureScene,leaveCaptureScene,captureViewState,restoreViewState,zoomBy,capturePlacementPreview,setMarkersVisible(v){markerVisibility=Boolean(v);if(!markerVisibility)for(const m of markers){m.button.hidden=true;m.button.style.display='none';}},setDimensionsVisible(v){dimensionVisible=!captureState.active&&Boolean(v);dimensions.visible=dimensionVisible;},enterRoom,leaveRoom,setRoom,setFixture,resetCamera(){if(captureState.active){const pose=capturePose();if(pose)moveCamera(pose.position,pose.target);}else active?roomCamera():setView('overview')},dispose,getState(){return {roomState:{...roomState},condition:selected,motions:{...motions},view,dimensionsVisible:dimensionVisible,inRoom:active,captureScene:{...captureState},camera:camera.position.toArray()};}};
+  return {ready:true,model,manifest,report,camera,controls,scene,renderer,setView,selectCondition,setStorage,setMotion,setCaptureScene,leaveCaptureScene,captureViewState,restoreViewState,zoomBy,capturePlacementPreview,setMarkersVisible(v){markerVisibility=Boolean(v);if(!markerVisibility)for(const m of markers){m.button.hidden=true;m.button.style.display='none';}},setDimensionsVisible(v){dimensionVisible=!captureState.active&&Boolean(v);dimensions.visible=dimensionVisible;},enterRoom,leaveRoom,setRoom,setFixture,resetCamera(){if(captureState.active){const pose=capturePose();if(pose)moveCamera(pose.position,pose.target);}else active?roomCamera():setView('overview')},dispose,getState(){return {roomState:{...roomState},condition:selected,motions:{...motions},motionLimits:structuredClone(motionLimits),dimensions:{...productGeometry.dimensions},view,dimensionsVisible:dimensionVisible,inRoom:active,captureScene:{...captureState},camera:camera.position.toArray()};}};
 }

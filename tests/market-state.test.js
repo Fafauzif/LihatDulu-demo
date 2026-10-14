@@ -16,12 +16,12 @@ function memoryStorage(initial = {}) {
 test.beforeEach(() => { clearMarketState(); globalThis.localStorage = memoryStorage({ unrelated: 'leave me alone' }); });
 test.after(() => { if (originalStorage === undefined) delete globalThis.localStorage; else globalThis.localStorage = originalStorage; });
 
-test('catalogue exports expose four active and two coming-soon authored records', () => {
+test('catalogue exports expose ten active and two coming-soon authored records', () => {
   assert.equal(LISTINGS, AVAILABLE_LISTINGS);
-  assert.equal(AVAILABLE_LISTINGS.length, 4);
-  assert.deepEqual(AVAILABLE_LISTINGS.map(item => item.id), ['sora', 'arca', 'batu', 'rimba']);
+  assert.equal(AVAILABLE_LISTINGS.length, 10);
+  assert.deepEqual(AVAILABLE_LISTINGS.map(item => item.id), ['sora', 'arca', 'batu', 'rimba','awan','tala','loka','nusa','senja','ruji']);
   assert.equal(COMING_SOON.length, 2);
-  assert.equal(ALL.length, 6);
+  assert.equal(ALL.length, 12);
 });
 
 test('malformed storage falls back safely and leaves unrelated browser data intact', () => {

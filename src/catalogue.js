@@ -1,3 +1,4 @@
+import { EXTRA_LISTINGS } from './example-listings.js';
 // Canonical authored catalogue for the LihatDulu marketplace concept.
 // All entries are demonstration inventory. They are intentionally labelled as
 // authored examples rather than live stock, sellers, ratings or transactions.
@@ -10,7 +11,7 @@ const soraPhotos = [
   photo('/images/wear-scratch.webp', 'Detail goresan pada permukaan pintu kiri lemari Sora', 'Detail pemakaian pada pintu kiri')
 ];
 
-export const AVAILABLE_LISTINGS = [
+const CORE_LISTINGS = [
   {
     id: 'sora', title: 'Lemari Sora', category: 'Lemari', price: 2450000, location: 'Jakarta Selatan',
     material: 'Panel kayu dengan finishing serat kayu terang', dimensions: { width: 90, depth: 47.5, height: 120 },
@@ -21,29 +22,38 @@ export const AVAILABLE_LISTINGS = [
   },
   {
     id: 'arca', title: 'Kursi Arca', category: 'Kursi', price: 1280000, location: 'Bandung',
-    material: 'Kayu jati dengan dudukan anyaman', dimensions: { width: 68, depth: 72, height: 78 },
-    description: 'Kursi makan dengan proporsi rendah dan sandaran melengkung. Lihat hubungan antara dudukan, rangka, dan ruang gerak di sekelilingnya.',
+    material: 'Rangka kayu, sandaran solid, dan lapisan duduk warna anyaman', dimensions: { width: 72.6, depth: 62, height: 120 },
+    description: 'Kursi kayu dengan sandaran solid yang tinggi, lapisan duduk warna anyaman, dan kaki gelap. Periksa proporsi rangka serta ruang gerak dari berbagai sisi.',
     condition: 'Bekas · patina ringan', photos: [photo('/images/catalogue/arca-chair.webp', 'Kursi Arca kayu dengan dudukan anyaman', 'Tampak tiga perempat')],
-    model: true, modelType: 'arca', available: true, asset: { modelUrl: '/assets/arca.glb', manifestUrl: '/assets/arca-manifest.json', reportUrl: '/assets/arca-report.json' }, capabilities: { articulation: false, conditions: false, room: true, capture: false }, features: ['Kayu jati', 'Dudukan anyaman', 'Model 3D interaktif'], created: '2026-09-18T08:00:00Z',
+    model: true, modelType: 'arca', available: true, asset: { modelUrl: '/assets/arca.glb', manifestUrl: '/assets/arca-manifest.json', reportUrl: '/assets/arca-report.json' }, capabilities: { articulation: false, conditions: false, room: true, capture: false }, features: ['Rangka kayu', 'Sandaran tinggi', 'Model 3D interaktif'], created: '2026-09-18T08:00:00Z',
     seller: { name: 'Ruang Kedua', note: 'Contoh penjual terkurasi' }
   },
   {
     id: 'batu', title: 'Meja Batu', category: 'Meja', price: 1890000, location: 'Yogyakarta',
-    material: 'Top kayu walnut dengan rak aksen kuningan', dimensions: { width: 122, depth: 78, height: 78 },
-    description: 'Meja kopi dengan bidang lebar dan rak tipis di bawahnya. Periksa ketebalan top, jarak kaki, dan ruang gerak dari setiap sisi.',
+    material: 'Permukaan batu terang dengan dua penyangga silinder', dimensions: { width: 122, depth: 78.1, height: 51.7 },
+    description: 'Meja kopi berpermukaan oval dengan material batu terang dan dua penyangga silinder. Periksa bidang top, bentuk penyangga, serta ukuran dari setiap sisi.',
     condition: 'Bekas · noda permukaan terlihat', photos: [photo('/images/catalogue/batu-coffee.webp', 'Meja Batu kayu dengan top tebal dan kaki gelap', 'Tampak tiga perempat')],
-    model: true, modelType: 'batu', available: true, asset: { modelUrl: '/assets/batu.glb', manifestUrl: '/assets/batu-manifest.json', reportUrl: '/assets/batu-report.json' }, capabilities: { articulation: false, conditions: false, room: true, capture: false }, features: ['Top walnut', 'Rak bawah', 'Model 3D interaktif'], created: '2026-09-21T08:00:00Z',
+    model: true, modelType: 'batu', available: true, asset: { modelUrl: '/assets/batu.glb', manifestUrl: '/assets/batu-manifest.json', reportUrl: '/assets/batu-report.json' }, capabilities: { articulation: false, conditions: false, room: true, capture: false }, features: ['Top oval', 'Dua penyangga', 'Model 3D interaktif'], created: '2026-09-21T08:00:00Z',
     seller: { name: 'Atelier Batu', note: 'Contoh penjual terkurasi' }
   },
   {
     id: 'rimba', title: 'Sideboard Rimba', category: 'Penyimpanan', price: 3150000, location: 'Jakarta Barat',
-    material: 'Panel hijau sage dengan kaki kayu gelap', dimensions: { width: 132, depth: 42, height: 88 },
+    material: 'Casing kayu walnut, pintu sage, dan kaki gelap', dimensions: { width: 132, depth: 47.5, height: 86 },
     description: 'Sideboard ringkas dengan dua pintu dan kaki tinggi. Lihat ruang simpan, arah bukaan, serta jarak dari dinding sebelum memilih tempatnya.',
     condition: 'Bekas · warna tidak sepenuhnya seragam', photos: [photo('/images/catalogue/rimba-sideboard.webp', 'Sideboard Rimba hijau sage dengan kaki kayu', 'Tampak depan tiga perempat')],
     model: true, modelType: 'rimba', available: true, asset: { modelUrl: '/assets/rimba.glb', manifestUrl: '/assets/rimba-manifest.json', reportUrl: '/assets/rimba-report.json' }, capabilities: { articulation: true, conditions: false, room: true, capture: false }, features: ['Dua pintu', 'Kaki tinggi', 'Model 3D interaktif'], created: '2026-09-25T08:00:00Z',
     seller: { name: 'Rimba Objects', note: 'Contoh penjual terkurasi' }
   }
 ];
+
+// Every core gallery is rendered from the retained GLB used by inspection.
+for (const item of CORE_LISTINGS) {
+  item.photos = ['hero', 'front', 'rear', 'detail'].map((view, index) => photo(`/images/products/${item.id}/${view}.webp`, `${item.title}, ${['tampak tiga perempat','tampak depan','tampak belakang','detail bentuk'][index]}`, ['Tampak tiga perempat','Tampak depan','Tampak belakang','Detail bentuk'][index]));
+  if (item.id === 'sora') item.photos.push(photo('/images/wear-scratch.webp','Goresan pintu kiri Lemari Sora','Goresan pintu kiri'), photo('/images/wear-chip.webp','Sudut kanan atas Lemari Sora','Sudut terkelupas'), photo('/images/wear-mark.webp','Bekas lingkaran pada Lemari Sora','Bekas permukaan atas'));
+  item.seller.note = 'Contoh penjual';
+  if(item.id === 'batu') item.materialGroup='Batu';
+}
+export const AVAILABLE_LISTINGS = [...CORE_LISTINGS, ...EXTRA_LISTINGS].map(item => ({...item, fulfilment:['Ambil sendiri','Pengiriman contoh'], wear:item.id === 'sora' ? 'Goresan 11 cm, sudut terkelupas 8 × 5 mm, bekas lingkaran 5,5 cm' : item.condition.split('·').slice(1).join('·').trim()}));
 
 export const COMING_SOON_LISTINGS = [
   { id: 'lino', title: 'Sofa Lino', category: 'Sofa', location: 'Segera hadir', price: null, available: false, model: false, modelType: 'lino', image: '/images/catalogue/lino-sofa.webp', photos: [photo('/images/catalogue/lino-sofa.webp', 'Sofa Lino berlapis kain terang', 'Referensi bentuk')], alt: 'Sofa Lino berlapis kain terang', description: 'Koleksi sofa dengan detail kondisi dan model 3D yang sedang disiapkan.' },
