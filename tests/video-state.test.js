@@ -30,6 +30,22 @@ test('progress clamps finite media time without changing a manually chosen chapt
   assert.equal(setVideoProgress(selected,13,false).area,'drawer');
 });
 
+test('restarting playback pauses at the front while preserving selected evidence', () => {
+  const { freshVideoState, selectVideoArea, captureVideoArea, setVideoProgress, restartVideoPlayback, videoCoverage } = api();
+  assert.equal(typeof restartVideoPlayback,'function');
+  const state=setVideoProgress(captureVideoArea(selectVideoArea(captureVideoArea(freshVideoState()),'drawer')),14.5,false);
+  const restarted=restartVideoPlayback(state);
+  assert.equal(restarted.area,'front');
+  assert.equal(restarted.elapsed,0);
+  assert.equal(restarted.paused,true);
+  assert.deepEqual(restarted.selected,state.selected);
+  assert.deepEqual(videoCoverage(restarted).selected,['front','drawer']);
+  assert.notEqual(restarted.selected,state.selected);
+  assert.equal(state.elapsed,14.5);
+  assert.equal(state.paused,false);
+  assert.throws(() => restartVideoPlayback({...state,area:'unknown'}));
+});
+
 test('capture and retake replace unique evidence without mutating earlier state', () => {
   const { freshVideoState, captureVideoArea, selectVideoArea, videoCoverage } = api();
   const empty=freshVideoState();

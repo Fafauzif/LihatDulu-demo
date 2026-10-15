@@ -318,11 +318,11 @@ try {
   });
   await check('prepared photo search changes source and filters example furniture', async () => {
     await open('/cari-dari-foto');
-    const first = await page.locator('.photo-search-source>img').getAttribute('src');
+    const first = await page.locator('.camera-selected-reference>img').getAttribute('src');
     await page.locator('[data-photo-source]').selectOption('tala');
-    const second = await page.locator('.photo-search-source>img').getAttribute('src');
+    const second = await page.locator('.camera-selected-reference>img').getAttribute('src');
     assert.notEqual(second, first);
-    assert.equal(second, '/images/examples/tala.webp');
+    assert.equal(second, '/images/cutouts/tala.webp');
     await page.locator('[data-photo-limits] [name="width"]').fill('55');
     await page.locator('[data-photo-limits] button[type="submit"]').click();
     assert.equal(await page.locator('.search-result').count(), 0);

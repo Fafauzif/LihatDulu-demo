@@ -1,3 +1,4 @@
+import { mediaSrc } from './product-media.js';
 export const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const paths = {
  search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/>',
@@ -24,5 +25,5 @@ const paths = {
 export const icon = (name, cls = '') => `<svg class="icon ${cls}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.info}</svg>`;
 export const link = (href, text, cls = '', extra = '') => `<a href="${esc(href)}" data-nav class="${cls}" ${extra}>${text}</a>`;
 export const button = (text, action, cls = '', extra = '') => `<button type="button" data-action="${action}" class="${cls}" ${extra}>${text}</button>`;
-export const image = (item, cls = '', eager = false) => `<img src="${esc(item.src)}" alt="${esc(item.alt)}" class="${cls}" width="1000" height="1000" loading="${eager ? 'eager' : 'lazy'}" decoding="async">`;
+export const image = (item, cls = '', eager = false) => `<img src="${esc(mediaSrc(item.src))}" alt="${esc(item.alt)}" class="${cls}" width="1000" height="1000" loading="${eager ? 'eager' : 'lazy'}" decoding="async">`;
 export const brand = () => `${link('/', 'LihatDulu<span aria-hidden="true">•</span>', 'brand', 'aria-label="LihatDulu, pilih pembeli atau penjual"')}`;

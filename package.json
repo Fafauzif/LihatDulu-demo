@@ -1,6 +1,6 @@
 {
   "name": "lihatdulu",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "Marketplace furnitur dengan perbandingan, inspeksi 3D, simulasi ruang, dan perjalanan video Sora.",
   "scripts": {
     "dev": "vite --host 127.0.0.1",

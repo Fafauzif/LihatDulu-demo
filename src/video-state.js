@@ -29,6 +29,9 @@ export function selectVideoArea(state,id){
   const area=areaOf(id);if(!area)throw Error('Bagian video tidak dikenal.');
   return {...validateVideoState(state),area:id,elapsed:area.start,paused:true};
 }
+export function restartVideoPlayback(state){
+  return {...validateVideoState(state),area:'front',elapsed:0,paused:true};
+}
 export function setVideoProgress(state,time,paused=state.paused){
   if(typeof time!=='number'||!Number.isFinite(time)||typeof paused!=='boolean')throw Error('Waktu video tidak valid.');
   return {...validateVideoState(state),elapsed:bounded(time),paused};
