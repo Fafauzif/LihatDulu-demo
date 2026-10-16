@@ -1,5 +1,58 @@
 :root {
---ld-ink:#181d17;--ld-ink-soft:#414845;--ld-bone:#f6fbf1;--ld-paper:#fff;--ld-moss:#00291d;--ld-moss-deep:#173f32;--ld-catalogue-yellow:#e3edb4;--ld-sand:#e8dfd1;--ld-clay:#88502f;--ld-capture:#293b34;--ld-line:#dce4d9;--ld-success:#245941;--ld-warning:#88502f;--ld-danger:#923d34;--ld-focus:#426bdf;--ld-space-1:4px;--ld-space-2:8px;--ld-space-3:12px;--ld-space-4:16px;--ld-space-5:24px;--ld-space-6:32px;--ld-space-7:48px;--ld-space-8:64px;--ld-radius-sm:6px;--ld-radius-md:12px;--ld-radius-lg:20px;--ld-radius-pill:999px;--ld-shadow-soft:0 4px 16px #00291d08;--ld-shadow-float:0 18px 44px #00291d20;--ld-body-font:Jakarta,'Plus Jakarta Sans',sans-serif;--ld-display-font:var(--ld-body-font);
---ink:var(--ld-ink);--muted:var(--ld-ink-soft);--canvas:var(--ld-bone);--paper:var(--ld-paper);--soft:#edf2e8;--forest:var(--ld-moss);--forest-hover:var(--ld-moss-deep);--line:var(--ld-line);--accent:var(--ld-clay);--media:#eef1e7;--danger:var(--ld-danger);--radius:12px;
+  --ld-ink: #181d17;
+  --ld-ink-soft: #414845;
+  --ld-bone: #f6fbf1;
+  --ld-paper: #fff;
+  --ld-moss: #00291d;
+  --ld-moss-deep: #173f32;
+  --ld-catalogue-yellow: #e3edb4;
+  --ld-sand: #e8dfd1;
+  --ld-clay: #88502f;
+  --ld-capture: #293b34;
+  --ld-line: #dce4d9;
+  --ld-success: #245941;
+  --ld-warning: #88502f;
+  --ld-danger: #923d34;
+  --ld-focus: #426bdf;
+  --ld-space-1: 4px;
+  --ld-space-2: 8px;
+  --ld-space-3: 12px;
+  --ld-space-4: 16px;
+  --ld-space-5: 24px;
+  --ld-space-6: 32px;
+  --ld-space-7: 48px;
+  --ld-space-8: 64px;
+  --ld-radius-sm: 6px;
+  --ld-radius-md: 12px;
+  --ld-radius-lg: 20px;
+  --ld-radius-pill: 999px;
+  --ld-shadow-soft: 0 4px 16px #00291d08;
+  --ld-shadow-float: 0 18px 44px #00291d20;
+  --ld-scroll-thumb: #8eaa9a;
+  --ld-scroll-track: #edf2e8;
+  --ld-scroll-hover: #587a68;
+  --ld-scroll-active: #00291d;
+  --ld-body-font: Jakarta, "Plus Jakarta Sans", sans-serif;
+  --ld-display-font: var(--ld-body-font);
+  --ink: var(--ld-ink);
+  --muted: var(--ld-ink-soft);
+  --canvas: var(--ld-bone);
+  --paper: var(--ld-paper);
+  --soft: #edf2e8;
+  --forest: var(--ld-moss);
+  --forest-hover: var(--ld-moss-deep);
+  --line: var(--ld-line);
+  --accent: var(--ld-clay);
+  --media: #eef1e7;
+  --danger: var(--ld-danger);
+  --radius: 12px;
 }
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -16,9 +16,9 @@ const browser=await chromium.launch({executablePath:await testBrowserPath(),head
 try{
  const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
- for(const path of ['/','/beli?model=1','/barang/sora','/barang/arca?tab=room','/barang/awan','/bandingkan','/jual','/jual/sora/rekam?area=drawer','/jual/sora/tinjau','/barang/sora?preview=1','/keranjang','/tinjau-pesanan','/cari-dari-foto']){
+ for(const path of ['/','/beli?model=1','/barang/sora?tab=model','/barang/arca?tab=room','/barang/awan','/bandingkan','/jual','/jual/sora/rekam?area=drawer','/jual/sora/tinjau','/barang/sora?preview=1','/keranjang','/tinjau-pesanan','/cari-dari-foto']){
   await page.goto('http://127.0.0.1:5215'+path,{waitUntil:'networkidle'});await page.locator('#main').waitFor();
-  if(path==='/barang/sora'||path==='/barang/arca?tab=room'){
+  if(path==='/barang/sora?tab=model'||path==='/barang/arca?tab=room'){
    await page.waitForFunction(()=>window.lihatDulu?.engine?.ready===true,null,{timeout:45000});
    assert.ok(await page.evaluate(()=>window.lihatDulu.engine.renderer.info.render.triangles>0));
   }

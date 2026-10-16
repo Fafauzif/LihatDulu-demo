@@ -24,6 +24,17 @@ export const PREPARED_FEES = Object.freeze({
   'Atelier Batu': 100000,
   'Rimba Objects': 100000
 });
+// Stable identities own fee rules; a display-name edit cannot change a quote.
+export const PREPARED_FEES_BY_SELLER_ID = Object.freeze({
+  'studio-sora': 150000, 'ruang-kedua': 125000,
+  'atelier-batu': 100000, 'rimba-objects': 100000
+});
+export function sellerIdentity(item) {
+  const seller = item?.seller;
+  if (typeof seller?.id === 'string' && /^[a-z0-9_-]{1,80}$/i.test(seller.id)) return seller.id;
+  if (typeof seller?.slug === 'string' && /^[a-z0-9_-]{1,80}$/i.test(seller.slug)) return seller.slug;
+  return String(seller?.name || 'Penjual LihatDulu').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'penjual-lihatdulu';
+}
 export const DELIVERY_FEES = Object.freeze({ pickup: 0, delivery: 150000 });
 export const PAYMENT_METHODS = Object.freeze(['bank', 'qris', 'cash']);
 
@@ -34,6 +45,7 @@ const MAX_COLLECTIONS = 20;
 const MAX_COLLECTION_ITEMS = 100;
 let sequence = 0;
 let storageFallback = false;
+let storageOutcome = 'device-persistent';
 
 const isPlain = value => value !== null && typeof value === 'object' && !Array.isArray(value) &&
   (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
@@ -58,7 +70,7 @@ function readRaw() {
   if (!storageFallback) try {
     const stored = storage()?.getItem(MARKETPLACE_STORAGE_KEY);
     if (stored !== null && stored !== undefined) raw = stored;
-  } catch { storageFallback = true; /* private mode or a blocked storage area */ }
+  } catch { storageFallback = true; storageOutcome = 'temporary-in-tab'; /* private mode or a blocked storage area */ }
   return raw;
 }
 function writeRaw(value) {
@@ -68,8 +80,9 @@ function writeRaw(value) {
   memory.set(MARKETPLACE_STORAGE_KEY, raw);
   try {
     const target = storage();
-    if (target) { target.setItem(MARKETPLACE_STORAGE_KEY, raw); storageFallback = false; }
-  } catch { storageFallback = true; /* memory remains the safe fallback */ }
+    if (target) { target.setItem(MARKETPLACE_STORAGE_KEY, raw); storageFallback = false; storageOutcome = 'device-persistent'; }
+    else { storageFallback = true; storageOutcome = 'temporary-in-tab'; }
+  } catch { storageFallback = true; storageOutcome = 'temporary-in-tab'; /* memory remains the safe fallback */ }
   return true;
 }
 
@@ -138,11 +151,13 @@ export function writeMarketState(value) {
   const normalized = normalizeMarketState(value);
   return writeRaw(normalized);
 }
+export function marketPersistenceStatus() { return storageOutcome; }
 
 export function clearMarketState() {
   memory.delete(MARKETPLACE_STORAGE_KEY);
   try { storage()?.removeItem(MARKETPLACE_STORAGE_KEY); } catch { /* no-op */ }
   storageFallback = false;
+  storageOutcome = 'device-persistent';
   return true;
 }
 
@@ -218,15 +233,16 @@ export function checkoutTotals(cartIds = readMarketState().cart, selection = {},
   const items = getCartItems(ids, baseListings);
   const grouped = new Map();
   for (const item of items) {
-    const seller = item.seller?.name || 'Penjual LihatDulu';
-    if (!grouped.has(seller)) grouped.set(seller, []);
-    grouped.get(seller).push(item);
+    const sellerId = sellerIdentity(item);
+    if (!grouped.has(sellerId)) grouped.set(sellerId, []);
+    grouped.get(sellerId).push(item);
   }
-  const groups = [...grouped.entries()].map(([seller, groupItems]) => {
+  const groups = [...grouped.entries()].map(([sellerId, groupItems]) => {
+    const seller = groupItems[0].seller?.name || 'Penjual LihatDulu';
     const subtotal = groupItems.reduce((sum, item) => sum + item.price, 0);
-    const preparedFee = PREPARED_FEES[seller] ?? 100000;
+    const preparedFee = PREPARED_FEES_BY_SELLER_ID[sellerId] ?? 100000;
     const deliveryFee = delivery === 'delivery' ? DELIVERY_FEES.delivery : 0;
-    return { seller, sellerName: seller, items: groupItems, ids: groupItems.map(item => item.id), subtotal, preparedFee, deliveryFee, total: subtotal + preparedFee + deliveryFee };
+    return { sellerId, seller, sellerName: seller, items: groupItems, ids: groupItems.map(item => item.id), subtotal, preparedFee, deliveryFee, total: subtotal + preparedFee + deliveryFee };
   });
   const subtotal = groups.reduce((sum, group) => sum + group.subtotal, 0);
   const preparedFee = groups.reduce((sum, group) => sum + group.preparedFee, 0);

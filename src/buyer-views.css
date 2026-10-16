@@ -1,0 +1,715 @@
+/* Buyer decisions use the shared sage surfaces, facts and action primitives. */
+.buyer-price-breakdown {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+  margin: 16px 0;
+}
+.buyer-price-breakdown dl,
+.buyer-total-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+.buyer-price-breakdown dl > div,
+.buyer-total-list > div,
+.buyer-offer-asking > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  font-size: 13px;
+}
+.buyer-price-breakdown dd,
+.buyer-total-list dd,
+.buyer-offer-asking dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.buyer-price-breakdown .total,
+.buyer-total-list .total {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.buyer-price-breakdown small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 12px;
+}
+.buyer-offer-entry {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+.buyer-offer-entry small {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+.buyer-offer-status {
+  display: grid;
+  gap: 8px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin: 18px 0;
+}
+.buyer-offer-status > strong {
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  font-weight: 600;
+}
+.buyer-storage-label {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.buyer-record-time,
+.buyer-record-hint {
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+  color: var(--muted);
+  margin: 0 !important;
+}
+.buyer-record-actions {
+  display: flex;
+  gap: 10px 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.buyer-record-actions .text-button,
+.buyer-record-actions .text-link {
+  min-height: 44px;
+}
+.buyer-delete {
+  color: var(--danger);
+}
+.buyer-delete:hover {
+  background: var(--paper);
+}
+.buyer-notice {
+  font-size: 13px;
+  line-height: 1.7;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: var(--soft);
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.buyer-notice p {
+  margin: 4px 0;
+}
+.buyer-field-error {
+  color: var(--danger);
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  margin: 6px 0 10px !important;
+}
+.buyer-field-error[hidden] {
+  display: none;
+}
+.buyer-field-help {
+  font-size: 11px !important;
+  line-height: 1.7 !important;
+  color: var(--muted);
+  margin: 7px 0 12px !important;
+}
+.buyer-offer-composer {
+  padding: 0 28px 28px;
+}
+.buyer-offer-composer header {
+  padding: 0 0 18px;
+}
+.buyer-offer-composer h2 {
+  font-size: 29px;
+  line-height: 1.25;
+  margin: 6px 0 0;
+}
+.buyer-offer-context {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+  margin-bottom: 16px;
+}
+.buyer-offer-context img {
+  width: 84px;
+  height: 90px;
+  background: var(--media);
+  object-fit: contain;
+  border-radius: 8px;
+}
+.buyer-offer-context h3 {
+  font-size: 19px;
+  margin: 0 0 5px;
+  overflow-wrap: anywhere;
+}
+.buyer-offer-context p {
+  margin: 0 0 5px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.buyer-offer-context span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.buyer-offer-composer > p {
+  font-size: 13px;
+  line-height: 1.75;
+  margin: 12px 0;
+}
+.buyer-offer-composer label {
+  font-size: 13px;
+  font-weight: 500;
+  display: block;
+  margin: 16px 0 8px;
+}
+.buyer-offer-composer input,
+.buyer-offer-composer textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 16px;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  padding: 12px;
+}
+.buyer-offer-composer textarea {
+  resize: none;
+  min-height: 112px;
+  max-height: 260px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+.buyer-offer-composer [aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.buyer-offer-asking {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+.buyer-offer-preview {
+  font-size: 14px !important;
+  font-weight: 600;
+  color: var(--forest);
+  min-height: 24px;
+}
+.buyer-composer-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+}
+.buyer-composer-actions .button {
+  width: 100%;
+  white-space: normal;
+}
+.buyer-workspace-tabs {
+  display: flex;
+  gap: 5px;
+  border-bottom: 1px solid var(--line);
+  margin: 0 0 28px;
+  flex-wrap: wrap;
+}
+.buyer-workspace-tabs a {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 17px;
+  font-size: 13px;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+.buyer-workspace-tabs a:hover {
+  background: var(--soft);
+}
+.buyer-workspace-tabs a.selected {
+  border-bottom-color: var(--forest);
+  font-weight: 600;
+  color: var(--forest);
+}
+.buyer-workspace-tabs a span {
+  font-size: 11px;
+  min-width: 22px;
+  text-align: center;
+  background: var(--soft);
+  padding: 2px 5px;
+  border-radius: 20px;
+}
+.buyer-workspace-intro {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.buyer-record-list {
+  display: grid;
+  gap: 18px;
+  max-width: 960px;
+}
+.buyer-record-card {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 24px;
+  border-radius: var(--radius);
+  display: grid;
+  gap: 15px;
+  min-width: 0;
+}
+.buyer-record-context {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+.buyer-record-context > a img {
+  width: 100px;
+  height: 110px;
+  object-fit: contain;
+  background: var(--media);
+  border-radius: 8px;
+}
+.buyer-record-context h2,
+.buyer-summary-card h2 {
+  font-size: 23px;
+  letter-spacing: -0.5px;
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.buyer-record-context p,
+.buyer-summary-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 4px 0;
+}
+.buyer-record-numbers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.buyer-record-numbers span {
+  font-size: 12px;
+  color: var(--muted);
+  display: grid;
+  gap: 7px;
+}
+.buyer-record-numbers strong {
+  font-size: 20px;
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.buyer-saved-note {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.75;
+  margin: 0;
+}
+.buyer-undo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  margin: 12px 0 20px;
+  font-size: 13px;
+}
+.buyer-cart-layout {
+  align-items: start;
+}
+.buyer-cart-layout .cart-summary .button {
+  width: 100%;
+}
+.buyer-cart-layout .cart-line > div {
+  min-width: 0;
+}
+.buyer-cart-layout .cart-line small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 6px;
+}
+.buyer-cart-layout .cart-line h3 {
+  overflow-wrap: anywhere;
+}
+.buyer-cart-layout .seller-fees {
+  line-height: 1.7;
+  font-size: 12px;
+  gap: 8px 16px;
+}
+.buyer-cart-layout .seller-fees strong {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.buyer-review-fulfilment {
+  display: grid;
+  gap: 7px;
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 18px;
+  margin-bottom: 20px;
+}
+.buyer-review-fulfilment > span,
+.buyer-review-fulfilment small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.buyer-review-fulfilment strong {
+  font-size: 15px;
+}
+.buyer-edit-cart {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  align-items: center;
+  margin-top: 6px;
+}
+.buyer-cart-layout .buyer-record-hint {
+  margin: 12px 0 !important;
+}
+.buyer-cart-layout .commerce-note {
+  line-height: 1.8;
+}
+.buyer-snapshot-heading h1 {
+  max-width: 800px;
+  font-size: 42px;
+}
+.buyer-snapshot-actions {
+  display: grid;
+  gap: 10px;
+}
+.buyer-snapshot-actions .text-link,
+.buyer-snapshot-actions .text-button {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+.buyer-snapshot-line .buyer-notice {
+  font-size: 12px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+}
+.buyer-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.buyer-collection-card {
+  background: var(--paper);
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+.buyer-collection-card h2 {
+  font-size: 22px;
+  overflow-wrap: anywhere;
+  margin: 16px 0 6px;
+}
+.buyer-collection-card > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 15px;
+}
+.buyer-collection-images {
+  display: flex;
+  height: 140px;
+  gap: 8px;
+  background: var(--soft);
+  padding: 10px;
+  border-radius: 8px;
+  align-items: center;
+}
+.buyer-collection-images img {
+  height: 100%;
+  min-width: 0;
+  object-fit: contain;
+  flex: 1;
+  width: 33%;
+}
+.buyer-collection-detail .section-heading {
+  margin: 24px 0;
+}
+.buyer-collection-members {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+  background: var(--soft);
+  padding: 20px;
+  border-radius: var(--radius);
+}
+.buyer-collection-members label {
+  font-size: 13px;
+  flex-basis: 100%;
+}
+.buyer-collection-members select {
+  flex: 1;
+  min-width: 140px;
+  min-height: 48px;
+  font-size: 14px;
+}
+.buyer-simple-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  overflow: hidden;
+}
+.buyer-simple-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  background: var(--media);
+}
+.buyer-simple-card > div {
+  padding: 16px;
+}
+.buyer-simple-card h3 {
+  margin: 0 0 12px;
+}
+.buyer-workspace-heading {
+  padding-bottom: 24px;
+}
+@media (max-width: 999px) {
+  .buyer-collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .buyer-cart-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+  }
+  .buyer-cart-layout .cart-summary {
+    padding: 22px;
+  }
+  .buyer-cart-layout .cart-line {
+    grid-template-columns: 80px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 18px;
+  }
+  .buyer-cart-layout .cart-line > a,
+  .buyer-cart-layout .cart-line img {
+    width: 80px;
+  }
+  .buyer-cart-layout .cart-line h3 {
+    font-size: 18px;
+  }
+}
+@media (max-width: 700px) {
+  .buyer-offer-composer {
+    padding: 0 20px 24px;
+  }
+  .buyer-offer-composer h2 {
+    font-size: 26px;
+  }
+  .buyer-offer-context {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .buyer-offer-context img {
+    width: 72px;
+    height: 82px;
+  }
+  .buyer-offer-context h3 {
+    font-size: 18px;
+  }
+  .buyer-offer-context p {
+    font-size: 12px;
+  }
+  .buyer-offer-composer > p {
+    font-size: 13px;
+  }
+  .buyer-composer-actions {
+    gap: 10px;
+    grid-template-columns: 1fr 1.3fr;
+  }
+  .buyer-composer-actions .button {
+    font-size: 13px;
+    padding: 12px;
+  }
+  .buyer-workspace-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-bottom: 22px;
+  }
+  .buyer-workspace-tabs a {
+    font-size: 12px;
+    padding: 10px 12px;
+    justify-content: space-between;
+  }
+  .buyer-record-card {
+    padding: 18px;
+    gap: 13px;
+  }
+  .buyer-record-context {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .buyer-record-context > a img {
+    width: 76px;
+    height: 90px;
+  }
+  .buyer-record-context h2,
+  .buyer-summary-card h2 {
+    font-size: 21px;
+  }
+  .buyer-record-numbers {
+    gap: 10px;
+  }
+  .buyer-record-numbers strong {
+    font-size: 18px;
+  }
+  .buyer-record-actions {
+    gap: 6px 14px;
+  }
+  .buyer-record-actions .button {
+    font-size: 12px;
+    padding: 11px 14px;
+  }
+  .buyer-notice {
+    font-size: 12px;
+    padding: 12px;
+  }
+  .buyer-cart-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .buyer-cart-layout .cart-summary {
+    position: static;
+    padding: 22px 20px;
+  }
+  .buyer-cart-layout .cart-line {
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+    padding: 16px 12px;
+    gap: 10px;
+  }
+  .buyer-cart-layout .cart-line > a,
+  .buyer-cart-layout .cart-line img {
+    width: 74px;
+  }
+  .buyer-cart-layout .cart-line p {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .buyer-cart-layout .cart-line h3 {
+    font-size: 18px;
+  }
+  .buyer-cart-layout .cart-line > .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+  .buyer-cart-layout .seller-fees {
+    font-size: 12px;
+    padding: 16px;
+  }
+  .buyer-cart-layout .dimension-tag {
+    font-size: 11px;
+  }
+  .buyer-cart-layout .cart-explanation {
+    font-size: 12px;
+  }
+  .buyer-snapshot-heading h1 {
+    font-size: 31px;
+    line-height: 1.2;
+  }
+  .buyer-collection-grid {
+    grid-template-columns: 1fr;
+  }
+  .buyer-collection-images {
+    height: 170px;
+  }
+  .buyer-price-breakdown dl > div,
+  .buyer-total-list > div {
+    font-size: 13px;
+  }
+  .buyer-total-list .total {
+    font-size: 17px;
+  }
+  .buyer-price-breakdown small {
+    font-size: 11px;
+  }
+  .buyer-undo {
+    font-size: 12px;
+    align-items: flex-start;
+  }
+  .buyer-undo .text-button {
+    min-height: 44px;
+  }
+  .buyer-snapshot-line .buyer-notice {
+    font-size: 12px;
+  }
+  .buyer-cart-layout .cart-line > div > strong {
+    font-size: 16px;
+  }
+  .buyer-collection-detail .product-grid > div > .text-button {
+    font-size: 12px;
+    min-height: 44px;
+  }
+}
+@media (max-width: 370px) {
+  .buyer-record-context h2 {
+    font-size: 19px;
+  }
+  .buyer-record-numbers {
+    grid-template-columns: 1fr;
+  }
+  .buyer-cart-layout .cart-line {
+    grid-template-columns: 62px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .buyer-cart-layout .cart-line > a,
+  .buyer-cart-layout .cart-line img {
+    width: 62px;
+  }
+  .buyer-cart-layout .cart-line h3 {
+    font-size: 17px;
+  }
+  .buyer-price-breakdown dl > div {
+    font-size: 12px;
+  }
+  .buyer-offer-context h3 {
+    font-size: 17px;
+  }
+  .buyer-offer-composer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .buyer-composer-actions {
+    grid-template-columns: 1fr;
+  }
+  .buyer-workspace-tabs a {
+    font-size: 11px;
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+}

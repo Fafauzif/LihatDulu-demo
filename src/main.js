@@ -1,97 +1,1246 @@
-import './brand-tokens.css';
-import './stitch.css';
-import { AVAILABLE_LISTINGS, COMING_SOON_LISTINGS, ALL_LISTINGS, formatPrice } from './catalogue.js';
-import { getListing, readMarketState, addCart, removeCart, getCartItems, checkoutTotals, setCheckout, saveCollection, deleteCollection } from './market-state.js';
-import { parseFilters, serializeFilters, filterCatalogue, getFacets, toggleCompare, comparisonRows } from './discovery.js';
-import { renderInspection, mountInspection } from './inspection.js';
-import { renderVideoWorkspace, renderVideoCapture, renderVideoReview, mountVideoJourney } from './video-capture.js';
-import { readVideoState, videoCoverage, PREPARED_AREAS } from './video-state.js';
-import { esc, icon, link, button, image, brand } from './components.js';
-import './refinement.css';
+import "./brand-tokens.css";
+import "./stitch.css";
+import {
+  AVAILABLE_LISTINGS,
+  COMING_SOON_LISTINGS,
+  formatPrice,
+} from "./catalogue.js";
+import {
+  getListing,
+  readMarketState,
+  addCart,
+  removeCart,
+  checkoutTotals,
+  setCheckout,
+  saveCollection,
+  deleteCollection,
+  cartEligible,
+  addToCollection,
+  removeFromCollection,
+  marketPersistenceStatus,
+} from "./market-state.js";
+import {
+  parseFilters,
+  serializeFilters,
+  filterCatalogue,
+  toggleCompare,
+  comparisonRows,
+  resetRefinements,
+  activeGroupCount,
+  filtersEqual,
+  parentCollections,
+  collectionSelections,
+  parsePreparedReference,
+  preparedReferencePath,
+} from "./discovery.js";
+import { mountInspection } from "./inspection.js";
+import {
+  renderVideoWorkspace,
+  renderVideoCapture,
+  renderVideoReview,
+  mountVideoJourney,
+} from "./video-capture.js";
+import { esc, icon, link, button, image, brand } from "./components.js";
+import { productCover, galleryMedia } from "./product-media.js";
+import "./discovery-views.css";
+import "./buyer-views.css";
+import { createDiscoveryViews } from "./discovery-views.js";
+import { createProductViews } from "./product-views.js";
+import {
+  getOfferDraft,
+  saveOfferDraft,
+  deleteOfferDraft,
+  deleteSummarySnapshot,
+  parseRupiahInput,
+  undoBuyerDeletion,
+  saveSummarySnapshot,
+  buyerPersistenceStatus,
+} from "./buyer-records.js";
+import {
+  renderOfferComposer,
+  renderBuyerSaved,
+  renderBuyerCart,
+  renderSavedSummary,
+} from "./buyer-views.js";
 
-const app = document.querySelector('#app'), modal = document.querySelector('#modal');
+const app = document.querySelector("#app");
+const modal = document.querySelector("#modal");
+const SAVED_KEY = "lihatdulu:favourites:v2";
+const COMPARE_KEY = "lihatdulu:compare:v1";
 const memory = new Map();
-function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return memory.get(key) ?? fallback; } }
-function write(key, value) { memory.set(key,value); try { localStorage.setItem(key,JSON.stringify(value)); } catch {} }
-const SAVED_KEY='lihatdulu:favourites:v2', COMPARE_KEY='lihatdulu:compare:v1';
-const eligibleIds = value => Array.isArray(value) ? [...new Set(value.filter(id=>AVAILABLE_LISTINGS.some(i=>i.id===id)))]:[];
-let saved=eligibleIds(read(SAVED_KEY,[])), compared=eligibleIds(read(COMPARE_KEY,[])).slice(0,3), dispose=()=>{}, toastTimer;
-const galleryPositions=new Map();
-const reminders=()=>{const raw=read('lihatdulu:reminders:v1',[]);return Array.isArray(raw)?[...new Set(raw.filter(id=>COMING_SOON_LISTINGS.some(i=>i.id===id)))]:[];};
-const catalogue=()=>AVAILABLE_LISTINGS.map(item=>getListing(item.id)).filter(Boolean);
-const currentFilters=()=>parseFilters(new URLSearchParams(location.search));
-const cm = value => new Intl.NumberFormat('id-ID',{maximumFractionDigits:1}).format(value);
-const dims=i=>i.dimensions?`${cm(i.dimensions.width)} × ${cm(i.dimensions.depth)} × ${cm(i.dimensions.height)} cm`:'';
-function toast(message){const el=document.querySelector('#toast');el.textContent=message;el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),3500);}
-function navigate(path, replace=false){modal.close();history[replace?'replaceState':'pushState']({},'',path);render();if(location.hash==='#camera-results'){document.getElementById('camera-results')?.scrollIntoView({behavior:'instant'});document.getElementById('camera-results')?.focus({preventScroll:true});}else{window.scrollTo({top:0,behavior:'instant'});document.querySelector('#main')?.focus({preventScroll:true});}}
-const filterPath=f=>`/beli${serializeFilters(f).size?'?'+serializeFilters(f):''}`;
-function header(){const sell=location.pathname.startsWith('/jual');return `<header class="site-header"><div class="header-inner">${brand()}<nav class="role-switch" aria-label="Mode">${link('/beli','Beli Furnitur',!sell?'selected':'')}${link('/jual','Jual Furnitur',sell?'selected':'')}</nav><form class="header-search" data-search><label class="sr-only" for="site-search">Cari furnitur</label>${icon('search')}<input id="site-search" name="q" type="search" placeholder="Cari lemari, kursi rotan, atau meja…" value="${esc(currentFilters().q)}">${link('/cari-dari-foto',icon('camera')+'<span>Cari dengan kamera</span>','header-camera','aria-label="Cari dengan kamera"')}<button class="sr-only" type="submit">Cari</button></form><nav class="header-nav" aria-label="Navigasi utama">${link('/beli','Jelajahi',location.pathname==='/beli'?'active':'')}${link('/tentang','Panduan',location.pathname==='/tentang'?'active':'')}${link('/tersimpan',icon('bookmark'),'icon-button','aria-label="Tersimpan"')}${link('/bandingkan',`${icon('compare')}<span class="count-badge" data-compare-count ${compared.length?'':'hidden'}>${compared.length}</span>`,'icon-button','aria-label="Bandingkan"')}${link('/keranjang',`${icon('bag')}<span class="count-badge" data-cart-count ${readMarketState().cart.length?'':'hidden'}>${readMarketState().cart.length}</span>`,'icon-button','aria-label="Keranjang"')}</nav></div></header>`;}
-function footer(){return `<footer class="site-footer"><div class="footer-grid"><div>${brand()}<p>Furnitur untuk kehidupan berikutnya.<br>Lihat bentuk, pahami kondisi, pilih dengan tenang.</p><small>Katalog contoh · LihatDulu</small></div><div><strong>JELAJAHI</strong>${link('/beli','Koleksi furnitur')}${link('/tersimpan','Pilihan tersimpan')}${link('/bandingkan','Bandingkan barang')}</div><div><strong>LIHAT LEBIH DEKAT</strong>${link('/barang/sora','Inspeksi 3D')}${link('/cari-dari-foto','Cari dengan kamera')}${link('/tentang','Panduan kondisi & ukuran')}</div><div><strong>UNTUK PENJUAL</strong>${link('/jual','Ruang kerja Sora')}${link('/jual/sora/rekam','Panduan video')}${link('/jual/sora/tinjau','Tinjau bukti')}</div></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} LihatDulu</span><span>Merawat barang. Memberi ruang baru.</span></div></footer>`;}
-function bottomNav(){return `<nav class="bottom-nav" aria-label="Navigasi ponsel">${[['/beli','grid','Jelajahi'],['/tersimpan','bookmark','Simpan'],['/bandingkan','compare','Bandingkan'],['/keranjang','bag','Keranjang'],['/jual','camera','Jual']].map(([href,ic,name])=>link(href,`${icon(ic)}<span>${name}</span>`,location.pathname===href?'active':'')).join('')}</nav>`;}
-function shell(content, cls=''){return `${header()}<main id="main" tabindex="-1" class="page ${cls}">${content}</main>${footer()}${bottomNav()}${compared.length&&location.pathname==='/beli'?compareTray():''}`;}
-function card(i){const active=i.available;return `<article class="product-card ${!active?'coming-card':''}" data-listing="${i.id}"><div class="card-media">${link(`/barang/${i.id}`,image(i.photos[0]),'card-image')}<div class="card-badges"><span class="badge ${i.model?'model-badge':''}">${icon(i.model?'cube':'camera')}${i.model?'3D interaktif':active?'Berbasis foto':'Segera hadir'}</span>${i.id==='sora'?'<span class="badge wear-badge">3 catatan kondisi</span>':''}</div>${active?button(icon('heart'),'save','icon-button save-button',`data-id="${i.id}" aria-label="${saved.includes(i.id)?'Hapus':'Simpan'} ${esc(i.title)}" aria-pressed="${saved.includes(i.id)}"`):''}</div><div class="card-body"><div class="card-meta"><span>${esc(i.category)}</span><span>${esc(i.location)}</span></div><h3>${link(`/barang/${i.id}`,esc(i.title))}</h3>${active?`<span class="dimension-tag">${icon('ruler')}${dims(i)}</span><p class="card-condition">${esc(i.condition.split('·').slice(1).join('·').trim())}</p><div class="card-price"><div><small>Harga barang</small><strong>${formatPrice(i.price)}</strong></div>${link(`/barang/${i.id}`,icon('arrow'),'card-open','aria-label="Lihat '+esc(i.title)+'"')}</div>${button(`${icon('compare')}<span>${compared.includes(i.id)?'Dipilih':'Bandingkan'}</span>`,'compare','compare-button',`data-id="${i.id}" aria-pressed="${compared.includes(i.id)}"`)} `:`<p class="card-condition">Foto koleksi awal. Detail belum tersedia.</p>${button(`${icon('bookmark')} ${reminders().includes(i.id)?'Minat tersimpan':'Simpan minat'}`,'remind','text-button',`data-id="${i.id}"`)}`}</div></article>`;}
-function rolePage(){return shell(`
-<section class="welcome-hero">
-  <div class="welcome-copy"><span class="eyebrow">FURNITUR BEKAS. PERTIMBANGAN BARU.</span><h1>Lihat lebih dekat.<br><span>Pilih lebih yakin.</span></h1><p>Temukan bentuk yang kamu suka. Kenali jejak pemakaiannya. Bayangkan di ruangmu.</p><div class="welcome-actions">${link('/beli','Temukan furnitur '+icon('arrow'),'button')}${link('/cari-dari-foto',icon('camera')+' Coba pencarian kamera','text-link')}</div><div class="welcome-details"><span>${icon('cube')} Jelajahi 3D</span><span>${icon('ruler')} Cek ukuran</span><span>${icon('camera')} Lihat kondisi</span></div></div>
-  <a href="/barang/sora" data-nav class="welcome-object" aria-label="Jelajahi Lemari Sora dalam 3D"><span class="object-topline"><span class="eyebrow">KENALI SETIAP SISINYA</span>${icon('cube')}</span>${image({src:'/images/products/sora/hero.webp',alt:'Lemari Sora kayu terang dengan dua pintu dan satu laci'},'',true)}<span class="object-note"><strong>Lemari Sora</strong><span>90 × 47,5 × 120 cm</span></span><span class="object-link">Putar. Buka. Periksa. ${icon('arrow')}</span></a>
-</section>
-<div class="entry-heading"><h2>Mulai dari kebutuhanmu.</h2><span>Dua cara memberi furnitur ruang berikutnya.</span></div>
-<div class="role-grid refined-roles"><a class="role-card" href="/beli" data-nav><div class="role-image">${image({src:'/images/examples/awan.webp',alt:'Sofa Awan berlapis kain krem'},'',true)}</div><div><span class="eyebrow">UNTUK PEMBELI</span><h2>Temukan yang pas ${icon('arrow')}</h2><p>Bandingkan ukuran dan kondisi sebelum memilih.</p><span class="role-cta">Jelajahi furnitur ${icon('arrow')}</span></div></a><a class="role-card" href="/jual" data-nav><div class="role-image">${image({src:'/images/products/rimba/hero.webp',alt:'Sideboard Rimba dengan pintu sage'},'',true)}</div><div><span class="eyebrow">UNTUK PENJUAL</span><h2>Tunjukkan dengan jelas ${icon('arrow')}</h2><p>Susun bukti visual lewat panduan video Sora.</p><span class="role-cta">Buka ruang penjual ${icon('arrow')}</span></div></a></div>
-<div class="welcome-demo"><span>${icon('info')} Katalog contoh dengan empat model 3D interaktif.</span>${link('/jual/sora/rekam','Coba alur penjual, 18 detik '+icon('arrow'),'text-link')}</div>`,'role-page refined-home');}
-const groupLabels={categories:'Kategori furnitur',conditions:'Kondisi',materials:'Material',locations:'Lokasi penjual'};
-function filterForm(f, mobile=false){const facets=getFacets(catalogue());return `<form data-filters class="filter-form"><input type="hidden" name="q" value="${esc(f.q)}"><input type="hidden" name="sort" value="${esc(f.sort)}"><div class="filter-heading"><h2>${icon('filter')} Filter katalog</h2>${button('Reset','filter-reset','text-button')}</div>${['categories'].map(key=>filterGroup(key,f,facets)).join('')}<fieldset><legend>Rentang harga</legend><div class="price-histogram" aria-hidden="true">${[3,5,7,9,10,8,7,5,4,3,2,1].map(h=>`<i style="--h:${h}"></i>`).join('')}</div><label class="range-label">Harga maksimal<output>${formatPrice(f.max??5000000)}</output><input type="range" min="0" max="5000000" step="50000" value="${f.max??5000000}" data-price-slider aria-label="Harga maksimal"></label><div class="filter-numbers"><label>Min. Rp<input name="min" type="number" inputmode="numeric" min="0" placeholder="0" value="${f.min??''}"></label><label>Maks. Rp<input name="max" type="number" inputmode="numeric" min="0" placeholder="Tanpa batas" value="${f.max??''}"></label></div></fieldset><fieldset><legend>Dimensi maksimal</legend><p class="field-hint">Sesuai ruang yang tersedia, dalam cm.</p><div class="dimension-fields">${[['width','Lebar'],['depth','Kedalaman'],['height','Tinggi']].map(([key,label])=>`<label>${label}<span><input name="${key}" type="number" min="0" step="0.5" placeholder="Semua" value="${f[key]??''}" inputmode="decimal"><small>cm</small></span></label>`).join('')}</div></fieldset><fieldset><legend>Media inspeksi</legend><label class="check-row"><input type="checkbox" name="model" value="1" ${f.model?'checked':''}><span>Model 3D tersedia</span><small>${facets.modelCount}</small></label></fieldset>${['conditions','materials','locations'].map(key=>filterGroup(key,f,facets)).join('')}<div class="filter-submit"><button class="button" type="submit">Tampilkan <span data-filter-preview>${filterCatalogue(catalogue(),f).length}</span> barang ${icon('arrow')}</button></div></form>`;}
-function filterGroup(key,f,facets){return `<fieldset><legend>${groupLabels[key]}</legend>${facets[key].map(({value,label,count})=>`<label class="check-row"><input type="checkbox" name="${key}" value="${esc(value)}" ${f[key].includes(value)?'checked':''}><span>${esc(label)}</span><small>${count}</small></label>`).join('')}</fieldset>`;}
-function readForm(form){const p=new URLSearchParams(),fd=new FormData(form);for(const [key,value]of fd.entries()){if(['categories','conditions','materials','locations'].includes(key))p.append(key,value);else if(value!=='')p.set(key,value);}return parseFilters(p);}
-function activeFilterChips(f){const labels=[];if(f.q)labels.push(['q',f.q,`“${f.q}”`]);for(const key of['categories','conditions','materials','locations'])f[key].forEach(v=>labels.push([key,v,v]));for(const [key,label]of[['min','Mulai'],['max','Hingga'],['width','Lebar ≤'],['depth','Dalam ≤'],['height','Tinggi ≤']])if(f[key]!==null)labels.push([key,'',`${label} ${['min','max'].includes(key)?formatPrice(f[key]):f[key]+' cm'}`]);if(f.model)labels.push(['model','','3D tersedia']);return labels.length?`<div class="active-filters" aria-label="Filter aktif">${labels.map(([key,value,label])=>button(`${esc(label)}${icon('close')}`,'remove-filter','filter-chip',`data-key="${key}" data-value="${esc(value)}" aria-label="Hapus filter ${esc(label)}"`)).join('')}${button('Hapus semua','clear-filters','text-button')}</div>`:'';}
-function marketplace(){const f=currentFilters(),items=filterCatalogue(catalogue(),f),facets=getFacets(catalogue());return shell(`<section class="market-hero refined-market-hero"><div><span class="eyebrow">KOLEKSI UNTUK RUANG BERIKUTNYA</span><h1>Temukan yang pas.<br><span>Kenali sebelum memilih.</span></h1><p>Furnitur bekas, dengan ukuran dan kondisi yang bisa kamu pelajari.</p><div class="market-search-row"><form data-search class="market-search">${icon('search')}<label class="sr-only" for="collection-search">Cari dalam koleksi</label><input id="collection-search" name="q" type="search" placeholder="Lemari, kursi rotan, meja…" value="${esc(f.q)}"><button type="submit" class="icon-button" aria-label="Cari dalam koleksi">${icon('arrow')}</button></form>${link('/cari-dari-foto',icon('camera')+' Cari dengan kamera','button secondary')}</div></div><a class="camera-feature" href="/cari-dari-foto" data-nav><span class="eyebrow">PUNYA BENTUK DALAM PIKIRAN?</span>${image(getListing('arca').photos[0],'',true)}<strong>Mulai dari yang kamu lihat.</strong><span>Coba demo kamera ${icon('arrow')}</span></a></section><nav class="category-chips refined-categories" aria-label="Kategori furnitur">${button(`Semua (${facets.total})`,'category','chip '+(!f.categories.length?'selected':''),'data-category=""')}${facets.categories.map(v=>button(`${v.label} (${v.count})`,'category','chip '+(f.categories.includes(v.value)?'selected':''),`data-category="${esc(v.value)}"`)).join('')}</nav><div class="market-layout"><aside class="filter-rail" aria-label="Filter katalog">${filterForm(f)}</aside><section class="catalogue-results" aria-label="Hasil katalog"><div class="result-toolbar"><div><i class="status-dot"></i><strong data-result-count>${items.length} furnitur ditemukan</strong></div><div class="result-tools">${button(`${icon('filter')} Filter`,'open-filters','button secondary mobile-filter')}<label class="sort-label"><span>Urutan</span><select data-sort aria-label="Urutkan furnitur">${[['relevance','Pilihan LihatDulu'],['newest','Terbaru'],['price-asc','Harga terendah'],['price-desc','Harga tertinggi']].map(([v,l])=>`<option value="${v}" ${f.sort===v?'selected':''}>${l}</option>`).join('')}</select></label></div></div>${activeFilterChips(f)}${items.length?`<div class="product-grid">${items.map(card).join('')}</div>`:`<div class="empty-state">${icon('search')}<h2>Belum ada yang cocok</h2><p>Coba rentang harga atau ukuran yang lebih luas.</p>${button('Reset filter','clear-filters','button')}</div>`}<section class="coming-section"><div class="section-heading"><div><span class="eyebrow">DI KOLEKSI BERIKUTNYA</span><h2>Segera hadir di katalog</h2></div><span>2 koleksi dalam persiapan</span></div><div class="coming-grid">${COMING_SOON_LISTINGS.map(card).join('')}</div></section><aside class="guide-banner">${icon('info')}<div><h3>Catatan kecil, keputusan lebih tenang.</h3><p>Periksa ukuran, lihat bagian yang pernah dipakai, dan coba model di ruangmu.</p></div>${link('/tentang','Panduan memilih '+icon('arrow'),'button secondary')}</aside></section></div>`,'market-page');}
-function compareTray(){return `<aside class="compare-tray" aria-label="Pilihan perbandingan"><div><strong>${compared.length} / 3 dipilih</strong><div class="compare-thumbs">${compared.map(id=>`<span>${image(getListing(id).photos[0])}${button(icon('close'),'compare','thumb-remove',`data-id="${id}" aria-label="Hapus ${esc(getListing(id).title)} dari perbandingan"`)}</span>`).join('')}</div></div>${button('Hapus','clear-compare','text-button')}${link('/bandingkan',`Bandingkan ${icon('arrow')}`,'button')}</aside>`;}
-function comparePage(){const items=compared.map(getListing).filter(i=>i?.available);return shell(`<div class="page-heading"><span class="eyebrow">SEBELUM MENENTUKAN PILIHAN</span><h1>Bandingkan furnitur.</h1><p>Ukuran, kondisi, dan harga dalam satu pandangan. Pilih hingga tiga barang.</p></div>${items.length?`<div class="compare-intro"><p>${icon('compare')} <strong>${items.length} dari 3 barang</strong><span>Baris berwarna menunjukkan perbedaan.</span></p>${link('/beli','Tambah pilihan','button secondary')}${button('Hapus semua','clear-compare','text-button')}</div><div class="comparison-scroll" tabindex="0" aria-label="Tabel perbandingan, geser untuk melihat semua barang"><table class="comparison-table"><caption class="sr-only">Perbandingan ${items.map(i=>i.title).join(', ')}</caption><thead><tr><th scope="col">Detail barang</th>${items.map(i=>`<th scope="col"><div class="compare-product">${image(i.photos[0])}${button(icon('close'),'compare','icon-button',`data-id="${i.id}" aria-label="Hapus ${esc(i.title)} dari perbandingan"`)}<h2>${link('/barang/'+i.id,esc(i.title))}</h2>${link('/barang/'+i.id,'Lihat barang '+icon('arrow'),'text-link')}</div></th>`).join('')}</tr></thead><tbody>${comparisonRows(items).map(r=>`<tr class="${r.different?'different':''}"><th scope="row">${r.label}${r.different?'<span class="difference-label">Berbeda</span>':''}</th>${r.values.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:empty('Belum ada pilihan untuk dibandingkan','Pilih tombol Bandingkan pada furnitur yang menarik perhatianmu.','/beli','Jelajahi furnitur')}`,'comparison-page');}
-function empty(title,text,href,label){return `<div class="empty-state">${icon('bookmark')}<h2>${title}</h2><p>${text}</p>${link(href,label,'button')}</div>`;}
-const wearNotes=[{id:'scratch',title:'Goresan pintu kiri',where:'Permukaan depan',size:'Panjang 11 cm',note:'Goresan tipis pada pintu kiri. Serat dan finishing di sekitarnya masih terlihat.',image:'/images/wear-scratch.webp'},{id:'chip',title:'Sudut terkelupas',where:'Sudut kanan atas',size:'8 × 5 mm',note:'Lapisan pada sudut kanan atas terkelupas. Periksa tepi dan ukurannya pada gambar detail.',image:'/images/wear-chip.webp'},{id:'mark',title:'Bekas pada permukaan',where:'Bagian atas',size:'Diameter 5,5 cm',note:'Bekas berbentuk lingkaran tampak samar pada permukaan atas.',image:'/images/wear-mark.webp'}];
-function gallery(i){const index=Math.min(galleryPositions.get(i.id)||0,i.photos.length-1);return `<section class="photo-gallery" data-gallery-id="${i.id}" aria-label="Foto ${esc(i.title)}"><div class="gallery-main">${image(i.photos[index],'',true)}${button(icon('search')+' Perbesar foto','enlarge-photo','gallery-enlarge',`data-id="${i.id}"`)}<span class="badge gallery-counter">${index+1} / ${i.photos.length}</span>${i.photos.length>1?`${button(icon('back'),'photo-prev','icon-button gallery-prev',`data-id="${i.id}" aria-label="Foto sebelumnya"`)}${button(icon('arrow'),'photo-next','icon-button gallery-next',`data-id="${i.id}" aria-label="Foto berikutnya"`)}`:''}</div><p class="gallery-caption">${esc(i.photos[index].caption)}</p><div class="gallery-thumbs">${i.photos.map((p,n)=>button(image(p),'photo','gallery-thumb '+(n===index?'selected':''),`data-id="${i.id}" data-index="${n}" aria-label="${esc(p.caption)}" aria-pressed="${n===index}"`)).join('')}</div></section>`;}
-function purchase(i,preview){const carted=readMarketState().cart.includes(i.id);return `<aside class="purchase-panel"><div class="product-kicker"><span>${esc(i.category)}</span><span>${icon('pin')}${esc(i.location)}</span></div><h1>${esc(i.title)}</h1><p class="product-subtitle">${esc(i.condition)}</p><div class="product-price"><small>Harga barang · 1 unit</small><strong>${formatPrice(i.price)}</strong></div><div class="product-facts"><div>${icon('ruler')}<span>Ukuran (L × D × T)<strong>${dims(i)}</strong></span></div><div>${icon('cube')}<span>Material<strong>${esc(i.material)}</strong></span></div><div>${icon('camera')}<span>Media yang tersedia<strong>${i.model?'Model 3D + '+i.photos.length+' gambar':'Foto produk · tanpa model 3D'}</strong></span></div></div><fieldset class="fulfilment-choice"><legend>Bagaimana barang sampai?</legend>${[['pickup','Ambil sendiri','Tanpa biaya pengiriman'],['delivery','Pengiriman contoh','Rp 150.000 per penjual']].map(([v,title,note])=>`<label><input type="radio" name="fulfilment" value="${v}" ${readMarketState().checkout.delivery===v?'checked':''}><span><strong>${title}</strong><small>${note}</small></span>${icon(v==='pickup'?'pin':'truck')}</label>`).join('')}</fieldset><div class="purchase-actions">${button(`${icon('bag')}${carted?'Di keranjang':'Tambahkan ke keranjang'}`,'add-cart','button',`data-id="${i.id}" ${preview?'disabled':''}`)}${button('Buat penawaran','offer','button secondary',`data-id="${i.id}" ${preview?'disabled':''}`)}</div><div class="product-secondary">${button(`${icon('heart')}${saved.includes(i.id)?'Tersimpan':'Simpan'}`,'save','text-button',`data-id="${i.id}" aria-pressed="${saved.includes(i.id)}"`)}${button(`${icon('compare')}${compared.includes(i.id)?'Dipilih':'Bandingkan'}`,'compare','text-button',`data-id="${i.id}" aria-pressed="${compared.includes(i.id)}"`)}</div><div class="seller-mini"><span class="seller-avatar">${esc(i.seller.name[0])}</span><span><strong>${esc(i.seller.name)}</strong><small>${esc(i.seller.note)} · ${esc(i.location)}</small></span>${link('/toko/'+i.id,icon('arrow'),'icon-button','aria-label="Lihat koleksi '+esc(i.seller.name)+'"')}</div><p class="commerce-note">Pilihan disimpan di perangkat ini. Tidak ada pembayaran atau pesanan yang dikirim.</p></aside>`;}
-function productPage(id){const i=getListing(id);if(!i)return missing();if(!i.available)return shell(`<div class="breadcrumb">${link('/beli','Koleksi')} / ${esc(i.title)}</div><div class="coming-product"><div>${gallery(i)}</div><div class="coming-purchase"><span class="eyebrow">KOLEKSI BERIKUTNYA</span><h1>${i.title}</h1><p>${i.description}</p><p>Harga, kondisi lengkap, dan model belum tersedia.</p>${button('Simpan minat','remind','button',`data-id="${i.id}"`)}${link('/beli','Kembali ke koleksi','text-link')}</div></div>`);const params=new URLSearchParams(location.search),preview=params.get('preview')==='1',tab=i.model?(params.get('tab')||'model'):'photos',mode=tab==='room'?'room':tab==='condition'?'condition':'model';const progress=videoCoverage(readVideoState());return shell(`<div class="breadcrumb">${link('/beli','Koleksi')} <span>/</span> ${link('/beli?categories='+encodeURIComponent(i.category),esc(i.category))}<span>/</span>${esc(i.title)}</div>${preview?`<div class="preview-notice"><div><strong>Pratinjau pembeli</strong><span>${progress.count} / 6 kelompok bukti dipilih. ${progress.complete?'Semua bagian contoh tersedia.':'Bukti masih sebagian.'}</span></div>${link('/jual/sora/tinjau','Kembali ke tinjauan '+icon('arrow'),'button secondary')}</div>`:''}${preview?`<section class="preview-coverage" aria-label="Bukti contoh pada pratinjau"><h2>Bukti pada pratinjau</h2><div>${PREPARED_AREAS.map(a=>`<a href="/jual/sora/rekam?area=${a.id}" data-nav class="preview-evidence ${progress.selected.includes(a.id)?'is-selected':''}"><img src="${a.image}" alt="" width="1000" height="1000"><span><strong>${esc(a.title)}</strong><small>${progress.selected.includes(a.id)?'Dipilih':'Belum dipilih'}</small></span>${icon(progress.selected.includes(a.id)?'check':'camera')}</a>`).join('')}</div></section>`:''}<div class="product-layout"><div class="product-media"><div class="media-tabs" role="navigation" aria-label="Pilihan media">${i.model?link(`/barang/${id}?${preview?'preview=1&':''}tab=model`,`${icon('cube')} Jelajahi 3D`,tab==='model'?'selected':''):''}${link(`/barang/${id}?${preview?'preview=1&':''}tab=photos`,`${icon('camera')} Foto (${i.photos.length})`,tab==='photos'?'selected':'')}${i.capabilities.room?link(`/barang/${id}?${preview?'preview=1&':''}tab=room`,`${icon('room')} Coba di ruang`,tab==='room'?'selected':''):''}</div>${tab==='photos'?gallery(i):renderInspection(mode,i)}<div class="media-help">${icon('info')}<p>${tab==='photos'?'Gambar dan ukuran berasal dari katalog contoh.':'Geser untuk memutar, gunakan sudut pandang dan kontrol ukuran. Ruangan merupakan simulasi ukuran.'}</p></div><section class="product-description"><span class="eyebrow">TENTANG BARANG INI</span><h2>Dibuat untuk dilihat lebih dekat.</h2><p>${esc(i.description)}</p><div class="feature-chips">${i.features.map(f=>`<span>${icon('check')}${esc(f)}</span>`).join('')}</div></section></div>${purchase(i,preview)}</div><section class="condition-section"><div class="section-heading"><div><span class="eyebrow">KONDISI & PEMAKAIAN</span><h2>${i.id==='sora'?'Detail yang perlu kamu tahu.':'Catatan kondisi barang.'}</h2></div><span>${i.id==='sora'?'3 detail dengan gambar':'Catatan katalog contoh'}</span></div>${i.id==='sora'?`<div class="condition-grid">${wearNotes.map((n,j)=>`<button type="button" class="condition-card" data-action="condition" data-id="${n.id}">${image({src:n.image,alt:n.title})}<div><span class="eyebrow">CATATAN ${j+1} · ${n.size}</span><h3>${n.title}</h3><p>${n.where}</p><span class="text-link">Lihat detail ${icon('arrow')}</span></div></button>`).join('')}</div>`:`<div class="condition-summary"><strong>${esc(i.condition)}</strong><p>${esc(i.wear)}</p><small>${i.model?'Gambar galeri merupakan render model tersimpan.':'Satu foto contoh tersedia.'} Catatan ini bukan hasil inspeksi fisik.</small></div>`}</section><section class="related-section"><div class="section-heading"><h2>Pilihan lain untuk ruangmu.</h2>${link('/beli','Lihat koleksi '+icon('arrow'),'text-link')}</div><div class="product-grid related-grid">${catalogue().filter(x=>x.id!==id).slice(0,4).map(card).join('')}</div></section>${!preview?`<div class="mobile-buy-bar"><div><small>${esc(i.title)}</small><strong>${formatPrice(i.price)}</strong></div>${button(`${icon('bag')}${readMarketState().cart.includes(i.id)?'Di keranjang':'Keranjang'}`,'add-cart','button',`data-id="${i.id}"`)}</div>`:''}`,'product-page');}
-function savedPage(){const state=readMarketState();return shell(`<div class="page-heading"><span class="eyebrow">RUANG UNTUK MEMPERTIMBANGKAN</span><h1>Pilihan tersimpan.</h1><p>${saved.length} furnitur yang ingin kamu lihat lagi.</p></div>${saved.length?`<div class="saved-toolbar">${button('Simpan sebagai koleksi','collection','button secondary')}${link('/beli','Tambah pilihan '+icon('arrow'),'text-link')}</div><div class="product-grid saved-grid">${saved.map(getListing).filter(Boolean).map(card).join('')}</div>`:empty('Simpan yang menarik perhatianmu','Ketuk ikon hati pada barang untuk mengumpulkan pilihan.','/beli','Jelajahi furnitur')}${state.collections.length?`<section class="collections"><h2>Koleksimu</h2>${state.collections.map(c=>`<article class="collection-row"><div><h3>${esc(c.name)}</h3><p>${c.ids.map(id=>getListing(id)?.title).filter(Boolean).map(esc).join(' · ')||'Belum ada barang'}</p></div>${button('Bandingkan','collection-compare','button secondary',`data-id="${c.id}"`)}${button(icon('close'),'delete-collection','icon-button',`data-id="${c.id}" aria-label="Hapus koleksi ${esc(c.name)}"`)}</article>`).join('')}</section>`:''}`);}
-function cartPage(review=false){const state=readMarketState(), totals=checkoutTotals(state.cart,state.checkout);return shell(`<div class="page-heading"><span class="eyebrow">PILIHAN UNTUK RUANGMU</span><h1>${review?'Tinjau pilihan.':'Keranjang furnitur.'}</h1><p>${totals.items.length} barang · satu unit untuk setiap furnitur.</p></div>${totals.items.length?`<div class="cart-layout"><section>${totals.groups.map(g=>`<article class="seller-cart"><h2>${icon('bag')}${esc(g.seller)} <small>${g.items.length} barang</small></h2>${g.items.map(i=>`<div class="cart-line">${link('/barang/'+i.id,image(i.photos[0]))}<div><h3>${link('/barang/'+i.id,esc(i.title))}</h3><p>${esc(i.condition)}</p><span class="dimension-tag">${dims(i)}</span><strong>${formatPrice(i.price)}</strong></div>${button(icon('close'),'remove-cart','icon-button',`data-id="${i.id}" aria-label="Hapus ${esc(i.title)} dari keranjang"`)}</div>`).join('')}<div class="seller-fees"><span>Persiapan barang (contoh)</span><strong>${formatPrice(g.preparedFee)}</strong><span>${totals.delivery==='delivery'?'Pengiriman contoh':'Ambil sendiri'}</span><strong>${formatPrice(g.deliveryFee)}</strong></div></article>`).join('')}<div class="cart-explanation">${icon('info')}<p>Biaya contoh dihitung per penjual. Barang, penjual, dan biaya adalah data contoh; tidak ada transaksi nyata.</p></div></section><aside class="cart-summary"><h2>Ringkasan pilihan</h2><fieldset class="fulfilment-choice"><legend>Cara menerima barang</legend>${[['pickup','Ambil sendiri'],['delivery','Pengiriman contoh']].map(([v,t])=>`<label><input name="cart-delivery" type="radio" value="${v}" ${totals.delivery===v?'checked':''}><span><strong>${t}</strong><small>${v==='pickup'?'Tanpa biaya kirim':'Rp 150.000 per penjual'}</small></span></label>`).join('')}</fieldset><dl><div><dt>Harga ${totals.items.length} barang</dt><dd>${formatPrice(totals.subtotal)}</dd></div><div><dt>Persiapan barang</dt><dd>${formatPrice(totals.preparedFee)}</dd></div><div><dt>Pengiriman</dt><dd>${formatPrice(totals.deliveryFee)}</dd></div><div class="total"><dt>Total contoh</dt><dd>${formatPrice(totals.total)}</dd></div></dl>${review?button('Simpan ringkasan lokal '+icon('check'),'save-summary','button'):link('/tinjau-pesanan','Tinjau pilihan '+icon('arrow'),'button')}<p class="commerce-note">Tidak membayar, menghubungi penjual, atau membuat pesanan.</p></aside></div>`:empty('Keranjangmu masih kosong','Periksa barang dari dekat, lalu tambahkan pilihanmu di sini.','/beli','Jelajahi furnitur')}`);}
-function photoSearch(){const params=new URLSearchParams(location.search),source=params.get('source')==='tala'?'tala':'arca',raw=params.get('width'),number=Number(raw),limit=raw&&Number.isFinite(number)&&number>=1&&number<=500?number:null,candidate=['arca','tala','senja'].map(getListing).filter(i=>!limit||i.dimensions.width<=limit);return shell(`<div class="breadcrumb">${link('/beli','Koleksi furnitur')}<span>/</span>Cari dengan kamera</div><div class="page-heading camera-page-heading"><span class="eyebrow">DARI BENTUK YANG MENARIK PERHATIANMU</span><h1>Lihat bentuknya.<br><span>Temukan pilihannya.</span></h1><p>Ikuti contoh gerakan kamera pada Kursi Arca, lalu jelajahi pilihan kursi.</p></div><div data-camera-host><div class="camera-loading" role="status">${icon('cube')}Menyiapkan demo kamera 3D…</div></div><section class="camera-results-section" id="camera-results" tabindex="-1"><div class="section-heading"><div><span class="eyebrow">PILIHAN CONTOH</span><h2>${candidate.length} kursi untuk dipertimbangkan.</h2><p>Bandingkan bentuk, ukuran, dan detail pemakaian.</p></div><span class="badge">Padanan telah disiapkan</span></div><div class="camera-refine"><div class="camera-selected-reference">${image(getListing(source).photos[0])}<span><span class="eyebrow">ACUAN PILIHAN</span><strong>${getListing(source).title}</strong>${source==='tala'?'<small>Demo gerakan memakai Kursi Arca.</small>':''}</span></div><label>Ganti acuan<select data-photo-source><option value="arca" ${source==='arca'?'selected':''}>Kursi Arca</option><option value="tala" ${source==='tala'?'selected':''}>Kursi Tala</option></select></label><form data-photo-limits><label>Lebar maksimal (cm)<input name="width" min="1" max="500" type="number" inputmode="numeric" value="${esc(limit||'')}" placeholder="Tanpa batas"></label><button class="button secondary" type="submit">Sesuaikan ${icon('filter')}</button></form>${button('Reset ukuran','photo-reset','text-button')}</div>${candidate.length?`<div class="product-grid camera-results">${candidate.map(i=>`<div class="search-result">${card(i)}<p class="match-reason">${icon('info')}${i.id===source?'Barang pada foto acuan.':i.id==='tala'?'Alternatif rotan dengan bantalan duduk.':i.id==='senja'?'Alternatif kursi santai berlapis kain.':'Alternatif kursi kayu dengan sandaran tinggi.'}</p></div>`).join('')}</div>`:empty('Ukuran ini belum cocok','Longgarkan batas lebar untuk melihat pilihan kursi.','/cari-dari-foto','Reset ukuran')}</section>`,'camera-page');}
-function about(){return shell(`<div class="page-heading"><span class="eyebrow">PANDUAN LIHATDULU</span><h1>Kenali barang.<br>Pahami ruangmu.</h1><p>Hal kecil yang perlu diperiksa sebelum memilih furnitur bekas.</p></div><div class="guide-grid">${[['ruler','Baca tiga dimensi','Lebar, kedalaman, dan tinggi dibedakan pada katalog. Sisakan ruang untuk berjalan dan bukaan pintu.'],['camera','Lihat pemakaiannya','Catatan permukaan membantu menunjukkan goresan, perubahan warna, dan sudut yang perlu dilihat lagi.'],['cube','Jelajahi modelnya','Empat produk memiliki model tersimpan. Putar, ganti sudut pandang, dan atur bukaan yang tersedia.'],['room','Coba ukurannya','Gunakan ruangan simulasi untuk memeriksa ukuran dan jarak bukaan. Ukuran ruang asli tetap perlu diukur.']].map(([ic,title,text])=>`<article>${icon(ic)}<h2>${title}</h2><p>${text}</p></article>`).join('')}</div><div class="guide-banner"><div><h2>Coba dengan Lemari Sora.</h2><p>Jelajahi model, tiga catatan kondisi, dan bukaan penyimpanan.</p></div>${link('/barang/sora','Lihat Sora '+icon('arrow'),'button')}</div><p class="about-scope">LihatDulu ini menggunakan katalog contoh dan data lokal di perangkat. Video penjual sudah disiapkan; tidak ada rekonstruksi 3D, transaksi, unggah, atau kontak penjual.</p>`);}
-function storePage(id){const i=getListing(id);if(!i)return missing();const items=catalogue().filter(x=>x.seller.name===i.seller.name);return shell(`<div class="store-heading"><span class="seller-avatar">${i.seller.name[0]}</span><div><span class="eyebrow">KOLEKSI PENJUAL</span><h1>${esc(i.seller.name)}</h1><p>${esc(i.location)} · ${esc(i.seller.note)}</p></div></div><div class="product-grid saved-grid">${items.map(card).join('')}</div>`);}
-function missing(){return shell(empty('Halaman belum tersedia','Temukan furnitur dan panduan dari koleksi utama.','/beli','Kembali ke koleksi'));}
-function openModal(content,cls=''){modal.className=cls;modal.innerHTML=`<div class="dialog-top">${button(icon('close'),'close-modal','icon-button','aria-label="Tutup dialog"')}</div>${content}`;modal.showModal();}
-function paintPhotoModal(id){const focusAction=modal.contains(document.activeElement)?document.activeElement.dataset.action:null;const item=getListing(id),index=galleryPositions.get(id)||0;modal.dataset.photoId=id;modal.setAttribute('aria-label','Foto '+item.title);modal.innerHTML=`<div class="dialog-top">${button(icon('close'),'close-modal','icon-button','aria-label="Tutup foto"')}</div><div class="enlarged-photo">${image(item.photos[index],'',true)}</div><p class="photo-modal-caption" role="status" aria-live="polite">${esc(item.title)} · ${esc(item.photos[index].caption)} · ${index+1} / ${item.photos.length}</p><div class="photo-modal-tools">${item.photos.length>1?button(icon('back'),'modal-photo-prev','button secondary',`data-id="${id}" aria-label="Foto sebelumnya"`):''}${button('Perbesar 1,5×','zoom-photo','button secondary','aria-pressed="false"')}${item.photos.length>1?button(icon('arrow'),'modal-photo-next','button secondary',`data-id="${id}" aria-label="Foto berikutnya"`):''}</div>`;if(modal.open&&focusAction)modal.querySelector(`[data-action="${focusAction}"]`)?.focus({preventScroll:true});}
-function openPhoto(id){if(!getListing(id))return;modal.className='photo-modal';paintPhotoModal(id);modal.showModal();}
-function openCondition(id){const n=wearNotes.find(n=>n.id===id);if(!n)return;openModal(`<div class="condition-dialog">${image({src:n.image,alt:n.title},'',true)}<div><span class="eyebrow">CATATAN KONDISI · LEMARI SORA</span><h2>${n.title}</h2><dl><div><dt>Lokasi</dt><dd>${n.where}</dd></div><div><dt>Ukuran</dt><dd>${n.size}</dd></div></dl><p>${n.note}</p>${button('Lihat letak pada model '+icon('cube'),'focus-condition','button',`data-id="${id}"`)}</div></div>`,'condition-modal');}
-function render(){dispose();dispose=()=>{};const path=location.pathname,listing=getListing('sora');document.body.classList.toggle('capture-page',path==='/jual/sora/rekam');if(path==='/')app.innerHTML=rolePage();else if(path==='/beli')app.innerHTML=marketplace();else if(path.startsWith('/barang/'))app.innerHTML=productPage(path.split('/')[2]);else if(path==='/bandingkan')app.innerHTML=comparePage();else if(path==='/tersimpan')app.innerHTML=savedPage();else if(['/keranjang','/tinjau-pesanan','/checkout'].includes(path))app.innerHTML=cartPage(path!='/keranjang');else if(path==='/cari-dari-foto')app.innerHTML=photoSearch();else if(path==='/tentang')app.innerHTML=about();else if(path.startsWith('/toko/'))app.innerHTML=storePage(path.split('/')[2]);else if(['/jual','/buat','/barang-saya'].includes(path))app.innerHTML=shell(renderVideoWorkspace(listing),'seller-page');else if(path==='/jual/sora/rekam')app.innerHTML=`<main id="main" tabindex="-1">${renderVideoCapture(listing)}</main>`;else if(path==='/jual/sora/tinjau')app.innerHTML=shell(renderVideoReview(listing),'seller-page');else app.innerHTML=missing();document.title=path.startsWith('/barang/')?`${getListing(path.split('/')[2])?.title||'Furnitur'} · LihatDulu`:path.startsWith('/jual')?'Ruang Penjual · LihatDulu':'LihatDulu · Furnitur yang pas';if(path==='/cari-dari-foto'){let cancelled=false,cleanup=()=>{};dispose=()=>{cancelled=true;cleanup();};import('./camera-search.js').then(({renderCameraSearch,mountCameraSearch})=>{if(cancelled)return;const host=app.querySelector('[data-camera-host]');host.innerHTML=renderCameraSearch();cleanup=mountCameraSearch(host);}).catch(()=>{if(!cancelled)app.querySelector('[data-camera-host]').innerHTML='<div class="camera-loading">Demo 3D belum dapat dimuat. Pilihan kursi tetap tersedia di bawah.</div>';});}if(app.querySelector('.inspection')){const item=getListing(path.split('/')[2]),tab=new URLSearchParams(location.search).get('tab'),mode=tab==='room'?'room':tab==='condition'?'condition':'model';dispose=mountInspection(app,{mode,listing:item,onToast:toast});}if(path.startsWith('/jual')||['/buat','/barang-saya'].includes(path))dispose=mountVideoJourney(app,{mode:path.includes('/rekam')?'capture':path.includes('/tinjau')?'review':'workspace',listing,onNavigate:navigate,onToast:toast});}
-Object.defineProperty(window,'lihatDulu',{value:{get engine(){return document.querySelector('.inspection')?._engine;}},configurable:true});
-document.addEventListener('click',event=>{const a=event.target.closest('a[data-nav]');if(a&&!a.getAttribute('href').startsWith('#')&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate(a.getAttribute('href'));return;}const el=event.target.closest('[data-action]');if(!el||el.disabled)return;const id=el.dataset.id,action=el.dataset.action;if(action==='close-modal'){modal.close();return;}if(action==='save'){saved=saved.includes(id)?saved.filter(v=>v!==id):[...saved,id];write(SAVED_KEY,saved);document.querySelectorAll(`[data-action="save"][data-id="${id}"]`).forEach(b=>{b.setAttribute('aria-pressed',saved.includes(id));b.setAttribute('aria-label',`${saved.includes(id)?'Hapus':'Simpan'} ${getListing(id).title}`);if(b.classList.contains('text-button'))b.innerHTML=`${icon('heart')}${saved.includes(id)?'Tersimpan':'Simpan'}`;});if(location.pathname==='/tersimpan')render();toast(saved.includes(id)?'Barang disimpan':'Barang dihapus dari pilihan');}
-else if(action==='compare'){if(!compared.includes(id)&&compared.length===3){toast('Maksimal tiga barang. Hapus satu pilihan untuk menggantinya.');return;}compared=toggleCompare(compared,id,catalogue());write(COMPARE_KEY,compared);if(location.pathname==='/bandingkan')render();else{document.querySelectorAll(`[data-action="compare"][data-id="${id}"]`).forEach(b=>{b.setAttribute('aria-pressed',compared.includes(id));b.innerHTML=`${icon('compare')}<span>${compared.includes(id)?'Dipilih':'Bandingkan'}</span>`;});document.querySelectorAll('[data-compare-count]').forEach(b=>{b.textContent=compared.length;b.hidden=!compared.length;});document.querySelector('.compare-tray')?.remove();if(location.pathname==='/beli'&&compared.length)app.insertAdjacentHTML('beforeend',compareTray());}}
-else if(action==='clear-compare'){compared=[];write(COMPARE_KEY,compared);render();}
-else if(action==='category'){const f=currentFilters();f.categories=el.dataset.category?[el.dataset.category]:[];navigate(filterPath(f));}
-else if(action==='open-filters'){openModal(`<h2 class="dialog-title">Sesuaikan pilihanmu</h2>${filterForm(currentFilters(),true)}`,'filter-modal');}
-else if(action==='filter-reset'){const form=el.closest('form');if(!modal.contains(form)){navigate('/beli');return;}const f=parseFilters(new URLSearchParams());form.outerHTML=filterForm(f,true);}
-else if(action==='clear-filters')navigate('/beli');
-else if(action==='remove-filter'){const f=currentFilters(),k=el.dataset.key;if(Array.isArray(f[k]))f[k]=f[k].filter(v=>v!==el.dataset.value);else f[k]=k==='q'?'':k==='model'?false:null;navigate(filterPath(f));}
-else if(action==='photo'||action==='photo-next'||action==='photo-prev'){const i=getListing(id),n=galleryPositions.get(id)||0;galleryPositions.set(id,action==='photo'?Number(el.dataset.index):(n+(action==='photo-next'?1:-1)+i.photos.length)%i.photos.length);const g=document.querySelector('.photo-gallery');g.outerHTML=gallery(i);document.querySelector(action==='photo'?`.gallery-thumb[data-index="${el.dataset.index}"]`:`[data-action="${action}"][data-id="${id}"]`)?.focus({preventScroll:true});}
-else if(action==='enlarge-photo')openPhoto(id);
-else if(action==='zoom-photo'){const panel=modal.querySelector('.enlarged-photo'),zoomed=panel.classList.toggle('is-zoomed');el.setAttribute('aria-pressed',zoomed);el.textContent=zoomed?'Atur ulang zoom':'Perbesar 1,5×';}
-else if(action==='modal-photo-prev'||action==='modal-photo-next'){const item=getListing(id),index=galleryPositions.get(id)||0;galleryPositions.set(id,(index+(action==='modal-photo-next'?1:-1)+item.photos.length)%item.photos.length);paintPhotoModal(id);}
-else if(action==='condition')openCondition(id);
-else if(action==='focus-condition'){modal.close();if(!document.querySelector('.inspection-condition')){navigate('/barang/sora?tab=condition');setTimeout(()=>document.querySelector(`.inspection-condition[data-condition="${id}"]`)?.click(),350);}else document.querySelector(`.inspection-condition[data-condition="${id}"]`)?.click();document.querySelector('.inspection')?.scrollIntoView({block:'start',behavior:'smooth'});}
-else if(action==='add-cart'){addCart(id);document.querySelectorAll('[data-cart-count]').forEach(b=>{b.textContent=readMarketState().cart.length;b.hidden=false;});document.querySelectorAll('[data-action="add-cart"]').forEach(b=>{if(b.dataset.id===id)b.innerHTML=icon('bag')+'Di keranjang';});toast('Barang ada di keranjang');}
-else if(action==='remove-cart'){removeCart(id);render();}
-else if(action==='offer'){const i=getListing(id), previous=read('lihatdulu:offer:'+id,{}), amount=Number.isFinite(previous?.amount)&&previous.amount>=1&&previous.amount<=i.price?previous.amount:Math.round(i.price*.9), note=typeof previous?.note==='string'?previous.note.slice(0,500):'';openModal(`<form data-offer data-id="${id}" class="composer"><span class="eyebrow">PENAWARAN LOKAL</span><h2>Penawaran untuk ${esc(i.title)}</h2><p>Harga barang ${formatPrice(i.price)}. Catatan disimpan di perangkat, belum dikirim ke penjual.</p><label>Harga penawaran (Rp)<input name="amount" required type="number" min="1" max="${i.price}" step="1" inputmode="numeric" value="${amount}"></label><label>Catatan (opsional)<textarea name="note" maxlength="500" placeholder="Rencana pengambilan atau pertanyaan tentang barang">${esc(note)}</textarea></label><button class="button" type="submit">Simpan penawaran ${icon('check')}</button></form>`);}
-else if(action==='collection')openModal(`<form data-collection class="composer"><h2>Beri nama koleksimu</h2><p>${saved.length} pilihan saat ini akan disimpan.</p><label>Nama koleksi<input name="name" required maxlength="50" placeholder="Ruang tamu baru"></label><button class="button" type="submit">Simpan koleksi</button></form>`);
-else if(action==='delete-collection'){deleteCollection(id);render();}
-else if(action==='collection-compare'){const c=readMarketState().collections.find(c=>c.id===id);compared=eligibleIds(c?.ids).slice(0,3);write(COMPARE_KEY,compared);navigate('/bandingkan');}
-else if(action==='remind'){const ids=reminders();write('lihatdulu:reminders:v1',[...new Set((Array.isArray(ids)?ids:[]).filter(v=>COMING_SOON_LISTINGS.some(i=>i.id===v)).concat(id))]);toast('Minat disimpan di perangkat. Tidak ada notifikasi otomatis.');el.innerHTML=icon('bookmark')+'Minat tersimpan';}
-else if(action==='save-summary'){write('lihatdulu:summary:v1',{ids:readMarketState().cart,delivery:readMarketState().checkout.delivery,total:checkoutTotals(readMarketState().cart,readMarketState().checkout).total});toast('Ringkasan disimpan di perangkat ini');}
-else if(action==='photo-reset')navigate('/cari-dari-foto');});
-document.addEventListener('submit',event=>{const form=event.target;if(form.matches('[data-search]')){event.preventDefault();const f=currentFilters();f.q=String(new FormData(form).get('q')).trim();navigate(filterPath(f));}else if(form.matches('[data-filters]')){event.preventDefault();if(form.reportValidity())navigate(filterPath(readForm(form)));}else if(form.matches('[data-offer]')){event.preventDefault();if(!form.reportValidity())return;const fd=new FormData(form);write('lihatdulu:offer:'+form.dataset.id,{amount:Number(fd.get('amount')),note:String(fd.get('note')).slice(0,500)});modal.close();toast('Penawaran disimpan lokal. Belum dikirim.');}else if(form.matches('[data-collection]')){event.preventDefault();const name=String(new FormData(form).get('name')).trim();if(name){saveCollection(name,saved);modal.close();render();toast('Koleksi disimpan');}}else if(form.matches('[data-photo-limits]')){event.preventDefault();const p=new URLSearchParams(location.search),v=new FormData(form).get('width');v?p.set('width',v):p.delete('width');navigate('/cari-dari-foto?'+p+'#camera-results');}});
-document.addEventListener('change',event=>{const el=event.target;if(el.matches('[data-sort]')){const f=currentFilters();f.sort=el.value;navigate(filterPath(f));}else if(el.name==='fulfilment'||el.name==='cart-delivery'){setCheckout({delivery:el.value});if(el.name==='cart-delivery')render();}else if(el.matches('[data-photo-source]')){const p=new URLSearchParams(location.search);p.set('source',el.value);navigate('/cari-dari-foto?'+p+'#camera-results');}});
-document.addEventListener('input',event=>{const el=event.target,form=el.closest('[data-filters]');if(!form)return;if(el.matches('[data-price-slider]')){form.querySelector('[name="max"]').value=el.value;form.querySelector('output').textContent=formatPrice(Number(el.value));}const count=form.querySelector('[data-filter-preview]');if(count)count.textContent=filterCatalogue(catalogue(),readForm(form)).length;});
-modal.addEventListener('close',()=>{const id=modal.dataset.photoId,galleryHost=id&&document.querySelector(`.photo-gallery[data-gallery-id="${id}"]`);if(galleryHost){galleryHost.outerHTML=gallery(getListing(id));document.querySelector('.gallery-enlarge')?.focus({preventScroll:true});}delete modal.dataset.photoId;modal.removeAttribute('aria-label');});
-modal.addEventListener('keydown',event=>{if(!modal.dataset.photoId||!['ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();const item=getListing(modal.dataset.photoId),index=galleryPositions.get(item.id)||0;galleryPositions.set(item.id,(index+(event.key==='ArrowRight'?1:-1)+item.photos.length)%item.photos.length);paintPhotoModal(item.id);});
-document.addEventListener('error',event=>{const img=event.target;if(img.tagName!=='IMG'||img.dataset.failed)return;img.dataset.failed='1';img.classList.add('failed-media');const holder=img.parentElement;if(holder?.classList.contains('card-image')||holder?.classList.contains('gallery-main')){holder.classList.add('image-failure');const note=document.createElement('span');note.textContent='Gambar belum tersedia. Detail barang tetap bisa dibuka.';holder.append(note);}},true);
-modal.addEventListener('click',event=>{if(event.target===modal){const r=modal.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)modal.close();}});
-window.addEventListener('popstate',()=>{modal.close();render();});
+const ephemeralKeys = new Set();
+let persistence = "device-persistent";
+function read(key, fallback) {
+  if (ephemeralKeys.has(key)) return memory.get(key) ?? fallback;
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? memory.get(key) ?? fallback;
+  } catch {
+    return memory.get(key) ?? fallback;
+  }
+}
+function write(key, value) {
+  memory.set(key, value);
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    ephemeralKeys.delete(key);
+    persistence = "device-persistent";
+  } catch {
+    ephemeralKeys.add(key);
+    persistence = "temporary-in-tab";
+  }
+  return persistence;
+}
+const eligibleIds = (value) =>
+  Array.isArray(value)
+    ? [
+        ...new Set(
+          value.filter((id) => AVAILABLE_LISTINGS.some((i) => i.id === id)),
+        ),
+      ].slice(0, 100)
+    : [];
+let saved = eligibleIds(read(SAVED_KEY, []));
+let compared = eligibleIds(read(COMPARE_KEY, []))
+  .filter((id) => cartEligible(id))
+  .slice(0, 3);
+let dispose = () => {};
+let toastTimer;
+let modalTrigger = null;
+let deletionUndo = null;
+const galleryPositions = new Map();
+const catalogue = () =>
+  AVAILABLE_LISTINGS.map((i) => getListing(i.id)).filter(Boolean);
+const currentFilters = () =>
+  parseFilters(
+    new URLSearchParams(location.pathname === "/beli" ? location.search : ""),
+  );
+const filterPath = (f) =>
+  "/beli" + (serializeFilters(f).size ? "?" + serializeFilters(f) : "");
+const cm = (value) =>
+  new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(value);
+const dims = (i) =>
+  i.dimensions
+    ? `${cm(i.dimensions.width)} × ${cm(i.dimensions.depth)} × ${cm(i.dimensions.height)} cm`
+    : "Belum dicantumkan";
+const reminders = () => {
+  const raw = read("lihatdulu:reminders:v1", []);
+  return Array.isArray(raw)
+    ? [
+        ...new Set(
+          raw.filter((id) => COMING_SOON_LISTINGS.some((i) => i.id === id)),
+        ),
+      ]
+    : [];
+};
+function toast(message) {
+  const el = document.querySelector("#toast");
+  el.textContent = message;
+  el.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("visible"), 4000);
+}
+const savedFeedback = (message, outcome = persistence) =>
+  outcome === "device-persistent"
+    ? message + " di perangkat ini."
+    : message + " sementara, hanya selama tab ini terbuka.";
+function rememberPosition(openedListingId = null) {
+  history.replaceState(
+    {
+      ...history.state,
+      scrollY: window.scrollY,
+      ...(openedListingId && location.pathname === "/beli"
+        ? { openedListingId }
+        : {}),
+    },
+    "",
+    location.href,
+  );
+}
+function navigate(path, options = {}) {
+  if (typeof options === "boolean") options = { replace: options };
+  if (modal.open) modal.close();
+  rememberPosition(
+    path.startsWith("/barang/") ? path.split("/")[2]?.split("?")[0] : null,
+  );
+  const same = location.pathname + location.search + location.hash === path;
+  if (!same)
+    history[options.replace ? "replaceState" : "pushState"](
+      { scrollY: 0 },
+      "",
+      path,
+    );
+  render();
+  if (options.results || location.hash === "#camera-results") {
+    const target = document.querySelector(
+      location.pathname === "/beli" ? "#catalogue-results" : "#camera-results",
+    );
+    target?.scrollIntoView({ behavior: "instant", block: "start" });
+    target?.focus({ preventScroll: true });
+    if (location.pathname === "/beli")
+      toast(
+        `${filterCatalogue(catalogue(), currentFilters()).length} furnitur ditemukan.`,
+      );
+  } else {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    document.querySelector("#main")?.focus({ preventScroll: true });
+  }
+}
+function header() {
+  const sell = location.pathname.startsWith("/jual");
+  const q = currentFilters().q;
+  return `<header class="site-header"><div class="header-inner">${brand()}
+    <nav class="role-switch" aria-label="Beli atau jual">${link("/beli", "Beli furnitur", !sell ? "selected" : "", !sell ? 'aria-current="page"' : "")}${link("/jual", "Jual furnitur", sell ? "selected" : "", sell ? 'aria-current="page"' : "")}</nav>
+    <form class="header-search" data-search novalidate><label class="sr-only" for="site-search">Cari semua furnitur</label>${icon("search")}<input id="site-search" name="q" type="search" maxlength="120" placeholder="Cari lemari, kursi, atau meja…" value="${esc(q)}">${button(icon("close"), "clear-search", "icon-button search-clear", `aria-label="Hapus pencarian" ${q ? "" : "hidden"}`)}<button type="submit" class="icon-button search-submit" aria-label="Cari semua furnitur">${icon("arrow")}</button></form>
+    <nav class="header-nav" aria-label="Navigasi utama">${link("/cari-dari-foto", icon("camera") + "<span>Acuan foto</span>", "photo-entry", 'aria-label="Demo pencarian dari foto"')}${link("/tersimpan", icon("bookmark"), "icon-button", 'aria-label="Pilihan tersimpan"')}${link("/bandingkan", icon("compare") + `<span class="count-badge" data-compare-count ${compared.length ? "" : "hidden"}>${compared.length}</span>`, "icon-button", 'aria-label="Bandingkan furnitur"')}${link("/keranjang", icon("bag") + `<span class="count-badge" data-cart-count ${checkoutTotals().items.length ? "" : "hidden"}>${checkoutTotals().items.length}</span>`, "icon-button", 'aria-label="Keranjang"')}</nav>
+  </div></header>`;
+}
+function footer() {
+  return `<footer class="site-footer"><div class="footer-grid"><div>${brand()}<p>Furnitur untuk kehidupan berikutnya.<br>Kenali bentuk, kondisi, dan ukurannya.</p><small>10 barang contoh · Pilihan tersimpan di perangkat.</small></div><div><strong>JELAJAHI</strong>${link("/beli", "Semua furnitur")}${link("/tersimpan", "Pilihan & draf tersimpan")}${link("/bandingkan", "Bandingkan barang")}</div><div><strong>SEBELUM MEMILIH</strong>${link("/barang/sora?tab=model", "Jelajahi Sora dalam 3D")}${link("/cari-dari-foto", "Demo pencarian dari foto")}${link("/tentang", "Panduan kondisi & ukuran")}</div><div><strong>UNTUK PENJUAL</strong>${link("/jual", "Ruang kerja Sora")}${link("/jual/sora/rekam", "Panduan video")}${link("/jual/sora/tinjau", "Tinjau bukti")}</div></div><div class="footer-bottom"><span>© ${new Date().getFullYear()} LihatDulu</span><span>Katalog contoh. Tidak ada transaksi atau pesan yang dikirim.</span></div></footer>`;
+}
+function bottomNav() {
+  return `<nav class="bottom-nav" aria-label="Navigasi ponsel">${[
+    ["/beli", "grid", "Jelajahi"],
+    ["/tersimpan", "bookmark", "Tersimpan"],
+    ["/bandingkan", "compare", "Bandingkan"],
+    ["/keranjang", "bag", "Keranjang"],
+    ["/jual", "camera", "Jual"],
+  ]
+    .map(([href, ic, name]) =>
+      link(
+        href,
+        `${icon(ic)}<span>${name}</span>`,
+        location.pathname === href ? "active" : "",
+        location.pathname === href ? 'aria-current="page"' : "",
+      ),
+    )
+    .join("")}</nav>`;
+}
+function shell(content, cls = "") {
+  return `${header()}<main id="main" tabindex="-1" class="page ${cls}">${ephemeralKeys.size || marketPersistenceStatus() === "temporary-in-tab" ? '<div class="local-storage-notice" role="status">Penyimpanan perangkat tidak tersedia. Pilihan sementara hanya ada selama tab ini terbuka; muat ulang dapat menghapusnya.</div>' : ""}${content}</main>${footer()}${bottomNav()}${compared.length && location.pathname === "/beli" ? compareTray() : ""}`;
+}
+function card(i) {
+  const active = i.available;
+  const coming = COMING_SOON_LISTINGS.some((item) => item.id === i.id);
+  return `<article class="product-card ${coming ? "coming-card" : active ? "" : "unavailable-card"}" data-listing="${i.id}"><div class="card-media">${link(`/barang/${i.id}`, image(productCover(i)), "card-image", `aria-label="Lihat ${esc(i.title)}"`)}${!coming ? button(icon("heart"), "save", "icon-button save-button", `data-id="${i.id}" aria-label="${saved.includes(i.id) ? "Hapus" : "Simpan"} ${esc(i.title)}" aria-pressed="${saved.includes(i.id)}"`) : '<span class="badge coming-badge">Segera hadir</span>'}${!coming && !active ? '<span class="badge coming-badge">Tidak tersedia</span>' : ""}</div><div class="card-body"><h3>${link("/barang/" + i.id, esc(i.title))}</h3>${!coming ? `<strong class="card-asking-price">${formatPrice(i.price)}</strong><p class="card-dimensions">${dims(i)}</p><p class="card-condition">${esc(i.condition.includes("·") ? i.condition.split("·").slice(1).join("·").trim() : i.condition)}</p><div class="card-seller">${link("/toko/" + (i.seller.id || i.id), esc(i.seller.name))}<span>${icon("pin")}${esc(i.location)}</span></div><div class="card-bottom"><span class="media-label">${icon(i.model ? "cube" : "camera")}${i.model ? "3D tersedia" : "1 foto"}</span>${button(icon("compare") + "<span>Bandingkan</span>", "compare", "compare-button", `data-id="${i.id}" aria-label="Bandingkan ${esc(i.title)}" aria-pressed="${compared.includes(i.id)}" ${active ? "" : "disabled"}`)}</div>` : `<p class="card-condition">Detail dan harga sedang disiapkan.</p>${button(reminders().includes(i.id) ? "Minat tersimpan" : "Simpan minat", "remind", "text-button", `data-id="${i.id}"`)}`}</div></article>`;
+}
+function rolePage() {
+  const collections = parentCollections(catalogue()).slice(0, 3);
+  return shell(
+    `<section class="home-intro"><div><span class="eyebrow">ADA RUANG UNTUK CERITA BERIKUTNYA</span><h1>Furnitur bekas,<br><span>lebih jelas sebelum dipilih.</span></h1><p>Temukan bentuk yang kamu suka. Periksa kondisi dan ukurannya.</p></div><div class="home-entry">${link("/beli", "Beli furnitur " + icon("arrow"), "button")}${link("/jual", "Jual furnitur", "button secondary")}</div></section><section class="home-products"><div class="section-heading"><div><h2>Pilihan furnitur</h2><p>Empat pilihan dari 10 barang contoh.</p></div>${link("/beli", "Lihat semua " + icon("arrow"), "text-link")}</div><div class="product-grid home-grid">${["sora", "awan", "loka", "tala"].map((id) => card(getListing(id))).join("")}</div></section><section class="home-categories"><div class="section-heading"><h2>Untuk setiap sudut rumah</h2></div><div class="category-directory">${collections.map((c) => link(c.href, `<div>${image(productCover(getListing(c.coverId)))}</div><span><strong>${esc(c.label)}</strong><small>${c.count} barang contoh</small></span>${icon("arrow")}`, "category-tile")).join("")}</div><div class="quick-collections">${link("/beli?model=1", icon("cube") + " 4 barang dengan 3D " + icon("arrow"), "quick-collection")}${link("/beli?max=1500000", "Hingga Rp 1.500.000 · 4 pilihan " + icon("arrow"), "quick-collection")}</div></section><section class="inspection-feature"><div class="inspection-feature-image">${image(productCover(getListing("sora")))}</div><div><span class="eyebrow">KENALI SEBELUM MEMILIH</span><h2>Sudut kecil juga berarti.</h2><p>Putar Lemari Sora, buka pintu dan lacinya, lalu periksa tiga catatan kondisi yang tersedia.</p>${link("/barang/sora?tab=model", "Lihat Sora dari dekat " + icon("arrow"), "button")}<small>Model 3D tersimpan · Ukuran sesuai model.</small></div></section><section class="seller-entry"><div><span class="eyebrow">PUNYA FURNITUR UNTUK RUANG BERIKUTNYA?</span><h2>Tunjukkan barangmu dengan jelas.</h2><p>Coba panduan video Sora dan susun bukti untuk pratinjau pembeli.</p></div>${link("/jual", "Buka ruang penjual " + icon("arrow"), "button secondary")}</section>`,
+    "home-page",
+  );
+}
+function marketplace() {
+  const f = currentFilters();
+  const items = filterCatalogue(catalogue(), f);
+  const groupCount = activeGroupCount(f);
+  const collections = parentCollections(catalogue()).slice(0, 3);
+  return shell(
+    `<div class="market-heading"><div><span class="eyebrow">TEMUKAN TEMPAT BARUNYA</span><h1>Koleksi furnitur</h1></div>${link("/cari-dari-foto", icon("camera") + " Demo acuan foto", "text-link")}</div><nav class="category-chips" aria-label="Jelajahi kategori">${button("Semua", "category", "chip " + (!f.categories.length ? "selected" : ""), `data-category="" aria-pressed="${!f.categories.length}"`)}${collections.map((c) => button(`${c.label} <small>${c.count}</small>`, "parent-category", "chip " + (f.categories.length && f.categories.join(",") === c.categories.join(",") ? "selected" : ""), `data-category="${c.id}" aria-pressed="${f.categories.join(",") === c.categories.join(",")}"`)).join("")}${link("/beli?model=1", icon("cube") + " 3D tersedia", "chip")}${link("/beli?max=1500000", "Hingga Rp 1,5 juta", "chip")}</nav><div class="market-layout"><aside class="filter-rail" aria-label="Filter katalog">${filterForm(f)}</aside><section class="catalogue-results" id="catalogue-results" tabindex="-1" aria-label="Hasil katalog"><div class="result-toolbar"><strong data-result-count>${items.length} furnitur ditemukan</strong><div class="result-tools">${button(icon("filter") + ` Filter${groupCount ? " (" + groupCount + ")" : ""}`, "open-filters", "button secondary mobile-filter", `aria-label="Filter, ${groupCount} kelompok aktif"`)}<label class="sort-label"><span>Urutkan</span><select data-sort aria-label="Urutkan furnitur">${[
+      ["relevance", "Pilihan LihatDulu"],
+      ["newest", "Terbaru"],
+      ["price-asc", "Harga terendah"],
+      ["price-desc", "Harga tertinggi"],
+    ]
+      .map(
+        ([v, l]) =>
+          `<option value="${v}" ${f.sort === v ? "selected" : ""}>${l}</option>`,
+      )
+      .join(
+        "",
+      )}</select></label></div></div>${activeFilterChips(f)}${items.length ? `<div class="product-grid">${items.map(card).join("")}</div><p class="catalogue-disclosure">${icon("info")} Harga, penjual, dan biaya merupakan data contoh. Periksa rincian biaya pada halaman barang.</p>` : noResults(f)}${items.length && !f.q && groupCount === 0 ? `<details class="coming-section"><summary>Di koleksi berikutnya · 2 barang dalam persiapan</summary><div class="coming-grid">${COMING_SOON_LISTINGS.map(card).join("")}</div></details>` : ""}</section></div>`,
+    "market-page",
+  );
+}
+function compareTray() {
+  return `<aside class="compare-tray" aria-label="Pilihan perbandingan"><div><strong>${compared.length} / 3 dipilih</strong><div class="compare-thumbs">${compared.map((id) => `<span>${image(productCover(getListing(id)))}${button(icon("close"), "compare", "thumb-remove", `data-id="${id}" aria-label="Hapus ${esc(getListing(id).title)} dari perbandingan"`)}</span>`).join("")}</div></div>${button("Hapus", "clear-compare", "text-button")}${link("/bandingkan", "Bandingkan " + icon("arrow"), "button")}</aside>`;
+}
+function empty(title, text, href, label) {
+  return `<div class="empty-state">${icon("bookmark")}<h2>${esc(title)}</h2><p>${esc(text)}</p>${link(href, label, "button")}</div>`;
+}
+function missing() {
+  return shell(
+    empty(
+      "Halaman belum tersedia",
+      "Temukan furnitur dan panduan dari koleksi utama.",
+      "/beli",
+      "Kembali ke koleksi",
+    ),
+  );
+}
+const discoveryViews = createDiscoveryViews({
+  catalogue,
+  card,
+  shell,
+  getListing,
+});
+const {
+  filterForm,
+  readForm,
+  validateForm,
+  updatePreview,
+  activeFilterChips,
+  noResults,
+  photoSearch,
+} = discoveryViews;
+const productViews = createProductViews({
+  shell,
+  card,
+  saved: () => saved,
+  compared: () => compared,
+  galleryPositions,
+  missing,
+});
+const {
+  productPage,
+  storePage,
+  gallery,
+  wearNotes,
+  conditionDetail,
+  purchase,
+} = productViews;
+function comparePage() {
+  const items = compared.map(getListing).filter((i) => i?.available);
+  return shell(
+    `<div class="page-heading"><span class="eyebrow">SEBELUM MENENTUKAN PILIHAN</span><h1>Bandingkan furnitur.</h1><p>Ukuran, kondisi, dan harga dalam satu pandangan. Pilih hingga tiga barang.</p></div>${
+      items.length
+        ? `<div class="compare-intro"><p>${icon("compare")} <strong>${items.length} dari 3 barang</strong><span>Baris berwarna menunjukkan perbedaan.</span></p>${link("/beli", "Tambah barang untuk dibandingkan", "button secondary")}${button("Hapus semua", "clear-compare", "text-button")}</div><div class="comparison-scroll" tabindex="0" aria-label="Tabel perbandingan, geser untuk melihat semua barang"><table class="comparison-table"><caption class="sr-only">Perbandingan ${items.map((i) => i.title).join(", ")}</caption><thead><tr><th scope="col">Detail barang</th>${items.map((i) => `<th scope="col"><div class="compare-product">${image(i.photos[0])}${button(icon("close"), "compare", "icon-button", `data-id="${i.id}" aria-label="Hapus ${esc(i.title)} dari perbandingan"`)}<h2>${link("/barang/" + i.id, esc(i.title))}</h2>${link("/barang/" + i.id, "Lihat barang " + icon("arrow"), "text-link")}</div></th>`).join("")}</tr></thead><tbody>${comparisonRows(
+            items,
+          )
+            .map(
+              (r) =>
+                `<tr class="${r.different ? "different" : ""}"><th scope="row">${r.label}${r.different ? '<span class="difference-label">Berbeda</span>' : ""}</th>${r.values.map((v) => `<td>${esc(v)}</td>`).join("")}</tr>`,
+            )
+            .join("")}</tbody></table></div>`
+        : empty(
+            "Belum ada pilihan untuk dibandingkan",
+            "Pilih tombol Bandingkan pada furnitur yang menarik perhatianmu.",
+            "/beli",
+            "Jelajahi furnitur",
+          )
+    }`,
+    "comparison-page",
+  );
+}
+function about() {
+  return shell(
+    `<div class="page-heading"><span class="eyebrow">PANDUAN LIHATDULU</span><h1>Kenali barang.<br>Pahami ruangmu.</h1><p>Hal kecil yang perlu diperiksa sebelum memilih furnitur bekas.</p></div><div class="guide-grid">${[
+      [
+        "ruler",
+        "Baca tiga dimensi",
+        "Lebar, kedalaman, dan tinggi dibedakan pada katalog. Sisakan ruang untuk berjalan dan bukaan pintu.",
+      ],
+      [
+        "camera",
+        "Lihat pemakaiannya",
+        "Catatan permukaan membantu menunjukkan goresan, perubahan warna, dan sudut yang perlu dilihat lagi.",
+      ],
+      [
+        "cube",
+        "Jelajahi modelnya",
+        "Empat produk memiliki model tersimpan. Putar, ganti sudut pandang, dan atur bukaan yang tersedia.",
+      ],
+      [
+        "room",
+        "Coba ukurannya",
+        "Gunakan ruangan simulasi untuk memeriksa ukuran dan jarak bukaan. Ukuran ruang asli tetap perlu diukur.",
+      ],
+    ]
+      .map(
+        ([ic, title, text]) =>
+          `<article>${icon(ic)}<h2>${title}</h2><p>${text}</p></article>`,
+      )
+      .join(
+        "",
+      )}</div><div class="guide-banner"><div><h2>Coba dengan Lemari Sora.</h2><p>Jelajahi model, tiga catatan kondisi, dan bukaan penyimpanan.</p></div>${link("/barang/sora", "Lihat Sora " + icon("arrow"), "button")}</div><p class="about-scope">LihatDulu ini menggunakan katalog contoh dan data lokal di perangkat. Video penjual sudah disiapkan; tidak ada rekonstruksi 3D, transaksi, unggah, atau kontak penjual.</p>`,
+  );
+}
+
+function openModal(content, cls = "", label = "") {
+  modalTrigger = document.activeElement;
+  modal.className = cls;
+  modal.innerHTML = `<div class="dialog-top">${button(icon("close"), "close-modal", "icon-button", 'aria-label="Tutup dialog"')}</div><div class="dialog-body">${content}</div>`;
+  const title = modal.querySelector("h2");
+  if (title) {
+    title.id = "dialog-title";
+    modal.setAttribute("aria-labelledby", title.id);
+    modal.removeAttribute("aria-label");
+  } else {
+    modal.setAttribute("aria-label", label || "Pilihan LihatDulu");
+    modal.removeAttribute("aria-labelledby");
+  }
+  document.body.classList.add("modal-open");
+  modal.showModal();
+}
+function requestModalClose() {
+  const form = modal.querySelector("[data-offer]");
+  if (
+    form?.dataset.dirty === "true" &&
+    !modal.querySelector(".discard-draft")
+  ) {
+    const panel = document.createElement("div");
+    panel.className = "discard-draft";
+    panel.innerHTML = `<p>Perubahan draf belum disimpan.</p>${button("Lanjutkan mengedit", "keep-editing", "button secondary")}${button("Buang perubahan", "discard-edit", "text-button")}`;
+    form.append(panel);
+    panel.querySelector("button")?.focus();
+    return;
+  }
+  if (!form || form.dataset.dirty !== "true") modal.close();
+}
+function paintPhotoModal(id) {
+  const item = getListing(id);
+  if (!item) return;
+  const media = galleryMedia(item);
+  const index = Math.min(galleryPositions.get(id) || 0, media.length - 1);
+  const focusAction = modal.contains(document.activeElement)
+    ? document.activeElement.dataset.action
+    : null;
+  modal.dataset.photoId = id;
+  modal.setAttribute("aria-label", "Gambar " + item.title);
+  modal.removeAttribute("aria-labelledby");
+  modal.innerHTML = `<div class="dialog-top">${button(icon("close"), "close-modal", "icon-button", 'aria-label="Tutup gambar"')}</div><div class="enlarged-photo">${image(media[index], "", true)}</div><p class="photo-modal-caption" role="status" aria-live="polite">${esc(item.title)} · ${esc(media[index].caption)} · ${index + 1} / ${item.photos.length}</p><div class="photo-modal-tools">${item.photos.length > 1 ? button(icon("back"), "modal-photo-prev", "button secondary", `data-id="${id}" aria-label="Gambar sebelumnya"`) : ""}${button("Perbesar 1,5×", "zoom-photo", "button secondary", 'aria-pressed="false"')}${item.photos.length > 1 ? button(icon("arrow"), "modal-photo-next", "button secondary", `data-id="${id}" aria-label="Gambar berikutnya"`) : ""}</div>`;
+  if (modal.open && focusAction)
+    modal
+      .querySelector(`[data-action="${focusAction}"]`)
+      ?.focus({ preventScroll: true });
+}
+function openPhoto(id) {
+  if (!getListing(id)) return;
+  modalTrigger = document.activeElement;
+  modal.className = "photo-modal";
+  paintPhotoModal(id);
+  document.body.classList.add("modal-open");
+  modal.showModal();
+}
+function openCondition(id) {
+  openModal(
+    conditionDetail(id),
+    "condition-modal",
+    "Catatan kondisi Lemari Sora",
+  );
+}
+function savedPage() {
+  const p = new URLSearchParams(location.search);
+  return shell(
+    renderBuyerSaved({
+      view: p.get("view") || "barang",
+      savedIds: saved,
+      renderCard: card,
+      summaryId: p.get("summary"),
+      collectionId: p.get("collection"),
+    }),
+    "saved-page",
+  );
+}
+function cartPage(review = false) {
+  return shell(
+    renderBuyerCart({ review }),
+    review ? "review-page" : "cart-page",
+  );
+}
+function setPageMetadata(path) {
+  const titles = {
+    "/": "Furnitur bekas, lebih jelas sebelum dipilih",
+    "/beli": "Koleksi furnitur",
+    "/tersimpan": "Pilihan, draf & ringkasan tersimpan",
+    "/bandingkan": "Bandingkan furnitur",
+    "/keranjang": "Keranjang furnitur",
+    "/tinjau-pesanan": "Tinjau pilihan",
+    "/checkout": "Tinjau pilihan",
+    "/tentang": "Panduan kondisi & ukuran",
+    "/cari-dari-foto": "Demo pencarian dari foto",
+    "/jual": "Ruang penjual Sora",
+    "/jual/sora/rekam": "Video bukti Sora",
+    "/jual/sora/tinjau": "Tinjau bukti Sora",
+  };
+  const item = path.startsWith("/barang/")
+    ? getListing(path.split("/")[2])
+    : null;
+  document.title =
+    (item?.title ||
+      titles[path] ||
+      (path.startsWith("/toko/")
+        ? "Koleksi penjual"
+        : "Halaman belum tersedia")) + " · LihatDulu";
+  const description = item
+    ? `${item.title}. ${dims(item)}. ${item.available ? formatPrice(item.price) + ". " : ""}${item.condition || "Koleksi berikutnya"}. Katalog furnitur contoh LihatDulu.`
+    : "Jelajahi 10 furnitur contoh, bandingkan ukuran dan kondisi, lalu simpan pilihan di perangkat ini.";
+  document
+    .querySelector('meta[name="description"]')
+    ?.setAttribute("content", description);
+}
+function render() {
+  dispose();
+  dispose = () => {};
+  const path = location.pathname.replace(/\/$/, "") || "/";
+  document.body.classList.toggle("capture-page", path === "/jual/sora/rekam");
+  document.body.classList.toggle("on-product", path.startsWith("/barang/"));
+  document.body.classList.toggle(
+    "has-compare-tray",
+    path === "/beli" && compared.length > 0,
+  );
+  const sora = getListing("sora");
+  if (path === "/") app.innerHTML = rolePage();
+  else if (path === "/beli") app.innerHTML = marketplace();
+  else if (path.startsWith("/barang/"))
+    app.innerHTML = productPage(path.split("/")[2]);
+  else if (path === "/bandingkan") app.innerHTML = comparePage();
+  else if (path === "/tersimpan") app.innerHTML = savedPage();
+  else if (path.startsWith("/ringkasan/"))
+    app.innerHTML = shell(renderSavedSummary(path.split("/")[2]), "saved-page");
+  else if (["/keranjang", "/tinjau-pesanan", "/checkout"].includes(path))
+    app.innerHTML = cartPage(path !== "/keranjang");
+  else if (path === "/cari-dari-foto") app.innerHTML = photoSearch();
+  else if (path === "/tentang") app.innerHTML = about();
+  else if (path.startsWith("/toko/"))
+    app.innerHTML = storePage(path.split("/")[2]);
+  else if (["/jual", "/buat", "/barang-saya"].includes(path))
+    app.innerHTML = shell(renderVideoWorkspace(sora), "seller-page");
+  else if (path === "/jual/sora/rekam")
+    app.innerHTML = `<main id="main" tabindex="-1">${renderVideoCapture(sora)}</main>`;
+  else if (path === "/jual/sora/tinjau")
+    app.innerHTML = shell(renderVideoReview(sora), "seller-page");
+  else app.innerHTML = missing();
+  setPageMetadata(path);
+  if (app.querySelector(".inspection")) {
+    const item = getListing(path.split("/")[2]);
+    const tab = new URLSearchParams(location.search).get("tab");
+    dispose = mountInspection(app, {
+      mode:
+        tab === "room" ? "room" : tab === "condition" ? "condition" : "model",
+      listing: item,
+      onToast: toast,
+    });
+  }
+  if (path.startsWith("/jual") || ["/buat", "/barang-saya"].includes(path))
+    dispose = mountVideoJourney(app, {
+      mode: path.includes("/rekam")
+        ? "capture"
+        : path.includes("/tinjau")
+          ? "review"
+          : "workspace",
+      listing: sora,
+      onNavigate: navigate,
+      onToast: toast,
+    });
+  if (path === "/cari-dari-foto") {
+    let cancelled = false;
+    let cleanup = () => {};
+    let loaded = false;
+    const details = app.querySelector("[data-camera-demo]");
+    const onToggle = async () => {
+      if (!details.open || loaded) return;
+      loaded = true;
+      try {
+        const camera = await import("./camera-search.js");
+        if (cancelled) return;
+        const host = app.querySelector("[data-camera-host]");
+        if (host) {
+          host.innerHTML = camera.renderCameraSearch();
+          cleanup = camera.mountCameraSearch(host);
+        }
+      } catch {
+        if (!cancelled) {
+          const host = app.querySelector("[data-camera-host]");
+          if (host)
+            host.innerHTML =
+              "<p>Gerakan 3D belum tersedia. Pilihan kursi tetap tersedia di atas.</p>";
+        }
+      }
+    };
+    details?.addEventListener("toggle", onToggle);
+    dispose = () => {
+      cancelled = true;
+      cleanup();
+      details?.removeEventListener("toggle", onToggle);
+    };
+  }
+}
+Object.defineProperty(window, "lihatDulu", {
+  value: {
+    get engine() {
+      return document.querySelector(".inspection")?._engine;
+    },
+  },
+  configurable: true,
+});
+
+function updateSavedButtons(id) {
+  document
+    .querySelectorAll(`[data-action="save"][data-id="${id}"]`)
+    .forEach((b) => {
+      b.setAttribute("aria-pressed", saved.includes(id));
+      b.setAttribute(
+        "aria-label",
+        `${saved.includes(id) ? "Hapus" : "Simpan"} ${getListing(id).title}`,
+      );
+      if (b.classList.contains("text-button"))
+        b.innerHTML =
+          icon("heart") + (saved.includes(id) ? "Tersimpan" : "Simpan");
+    });
+}
+function updateCompare() {
+  if (location.pathname === "/bandingkan") {
+    render();
+    return;
+  }
+  document.querySelectorAll('[data-action="compare"]').forEach((b) => {
+    b.setAttribute("aria-pressed", compared.includes(b.dataset.id));
+    const span = b.querySelector("span");
+    if (span)
+      span.textContent = compared.includes(b.dataset.id)
+        ? "Dipilih"
+        : "Bandingkan";
+  });
+  document.querySelectorAll("[data-compare-count]").forEach((b) => {
+    b.textContent = compared.length;
+    b.hidden = !compared.length;
+  });
+  document.querySelector(".compare-tray")?.remove();
+  document.body.classList.toggle(
+    "has-compare-tray",
+    location.pathname === "/beli" && compared.length > 0,
+  );
+  if (location.pathname === "/beli" && compared.length)
+    app.insertAdjacentHTML("beforeend", compareTray());
+}
+function resetFilterForm(form) {
+  const isModal = modal.contains(form);
+  form.outerHTML = filterForm(resetRefinements(currentFilters()), isModal);
+  const next = isModal
+    ? modal.querySelector("form")
+    : app.querySelector("[data-filters]");
+  next
+    ?.querySelector('[data-action="filter-reset"]')
+    ?.focus({ preventScroll: true });
+}
+
+document.addEventListener("click", (event) => {
+  const a = event.target.closest("a[data-nav]");
+  if (
+    a &&
+    a.getAttribute("href") &&
+    !a.getAttribute("href").startsWith("#") &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.shiftKey &&
+    !event.altKey &&
+    event.button === 0
+  ) {
+    event.preventDefault();
+    navigate(a.getAttribute("href"));
+    return;
+  }
+  const el = event.target.closest("[data-action]");
+  if (!el || el.disabled) return;
+  const id = el.dataset.id;
+  const action = el.dataset.action;
+  if (action === "close-modal") requestModalClose();
+  else if (action === "keep-editing") {
+    modal.querySelector(".discard-draft")?.remove();
+    modal.querySelector('[name="amount"]')?.focus();
+  } else if (action === "discard-edit") {
+    modal.querySelector("[data-offer]")?.setAttribute("data-dirty", "false");
+    modal.close();
+  } else if (action === "clear-search") {
+    const input = el.closest("form").querySelector('[name="q"]');
+    input.value = "";
+    el.hidden = true;
+    const f = currentFilters();
+    f.q = "";
+    navigate(filterPath(f), { results: location.pathname === "/beli" });
+    document.querySelector("#site-search")?.focus({ preventScroll: true });
+  } else if (action === "save") {
+    saved = saved.includes(id) ? saved.filter((v) => v !== id) : [...saved, id];
+    const outcome = write(SAVED_KEY, saved);
+    updateSavedButtons(id);
+    if (location.pathname === "/tersimpan") render();
+    toast(
+      savedFeedback(
+        saved.includes(id) ? "Barang disimpan" : "Pilihan diperbarui",
+        outcome,
+      ),
+    );
+  } else if (action === "compare") {
+    if (!compared.includes(id) && compared.length === 3) {
+      toast("Maksimal tiga barang. Hapus satu pilihan untuk menggantinya.");
+      return;
+    }
+    compared = toggleCompare(compared, id, catalogue());
+    write(COMPARE_KEY, compared);
+    updateCompare();
+  } else if (action === "clear-compare") {
+    compared = [];
+    write(COMPARE_KEY, compared);
+    render();
+  } else if (action === "category") {
+    const f = currentFilters();
+    f.categories = el.dataset.category ? [el.dataset.category] : [];
+    navigate(filterPath(f), { results: true });
+  } else if (action === "parent-category") {
+    const f = currentFilters();
+    f.categories = collectionSelections(el.dataset.category).categories;
+    navigate(filterPath(f), { results: true });
+  } else if (action === "open-filters")
+    openModal(
+      `<h2>Sesuaikan pilihanmu</h2>${filterForm(currentFilters(), true)}`,
+      "filter-modal",
+    );
+  else if (action === "filter-reset") resetFilterForm(el.closest("form"));
+  else if (action === "filter-cancel") {
+    if (modal.contains(el)) modal.close();
+    else el.closest("form").outerHTML = filterForm(currentFilters());
+  } else if (action === "clear-filters")
+    navigate(filterPath(resetRefinements(currentFilters())), { results: true });
+  else if (action === "remove-filter") {
+    const f = currentFilters();
+    const key = el.dataset.key;
+    if (Array.isArray(f[key]))
+      f[key] = f[key].filter((v) => v !== el.dataset.value);
+    else if (key in f)
+      f[key] = key === "q" ? "" : key === "model" ? false : null;
+    navigate(filterPath(f), { results: true });
+  } else if (["photo", "photo-next", "photo-prev"].includes(action)) {
+    const i = getListing(id);
+    if (!i) return;
+    const n = galleryPositions.get(id) || 0;
+    galleryPositions.set(
+      id,
+      action === "photo"
+        ? Number(el.dataset.index)
+        : (n + (action === "photo-next" ? 1 : -1) + i.photos.length) %
+            i.photos.length,
+    );
+    const host = document.querySelector(".photo-gallery");
+    if (host) host.outerHTML = gallery(i);
+    document
+      .querySelector(
+        action === "photo"
+          ? `.gallery-thumb[data-index="${el.dataset.index}"]`
+          : `[data-action="${action}"][data-id="${id}"]`,
+      )
+      ?.focus({ preventScroll: true });
+  } else if (action === "enlarge-photo") openPhoto(id);
+  else if (action === "zoom-photo") {
+    const zoomed = modal
+      .querySelector(".enlarged-photo")
+      .classList.toggle("is-zoomed");
+    el.setAttribute("aria-pressed", zoomed);
+    el.textContent = zoomed ? "Atur ulang zoom" : "Perbesar 1,5×";
+  } else if (["modal-photo-prev", "modal-photo-next"].includes(action)) {
+    const i = getListing(id);
+    const n = galleryPositions.get(id) || 0;
+    galleryPositions.set(
+      id,
+      (n + (action === "modal-photo-next" ? 1 : -1) + i.photos.length) %
+        i.photos.length,
+    );
+    paintPhotoModal(id);
+  } else if (action === "condition") openCondition(id);
+  else if (action === "focus-condition") {
+    modal.close();
+    if (!document.querySelector(".inspection-condition"))
+      navigate(
+        "/barang/sora?" +
+          (new URLSearchParams(location.search).get("preview") === "1"
+            ? "preview=1&"
+            : "") +
+          "tab=condition",
+      );
+    const focusNote = () => {
+      const target = document.querySelector(
+        `.inspection-condition[data-condition="${id}"]`,
+      );
+      if (target && !target.disabled) target.click();
+    };
+    setTimeout(focusNote, 450);
+    document
+      .querySelector(".inspection")
+      ?.scrollIntoView({ block: "start", behavior: "instant" });
+  } else if (action === "add-cart") {
+    if (!cartEligible(id)) {
+      toast(
+        "Barang ini belum bisa ditambahkan. Lihat pilihan lain di katalog.",
+      );
+      return;
+    }
+    const state = addCart(id);
+    if (!state.cart.includes(id)) {
+      toast("Pilihan belum tersimpan. Coba lagi.");
+      return;
+    }
+    document.querySelectorAll("[data-cart-count]").forEach((b) => {
+      b.textContent = checkoutTotals().items.length;
+      b.hidden = false;
+    });
+    document
+      .querySelectorAll(`[data-action="add-cart"][data-id="${id}"]`)
+      .forEach((b) => {
+        b.innerHTML = icon("bag") + "Di keranjang";
+      });
+    const panel = document.querySelector(".purchase-panel");
+    panel?.querySelector(".cart-added")?.remove();
+    if (panel)
+      panel.insertAdjacentHTML(
+        "beforeend",
+        `<div class="cart-added" role="status"><strong>${esc(getListing(id).title)} ada di keranjang.</strong>${link("/keranjang", "Lihat keranjang " + icon("arrow"), "text-link")}${link("/beli", "Lanjut jelajahi", "text-link")}</div>`,
+      );
+    toast(
+      savedFeedback("Pilihan keranjang disimpan", marketPersistenceStatus()) +
+        " Belum menjadi pesanan.",
+    );
+  } else if (action === "remove-cart") {
+    deletionUndo = { type: "cart", id };
+    removeCart(id);
+    render();
+    app
+      .querySelector("#main")
+      ?.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="undo-banner" role="status">Barang dihapus dari keranjang. ${button("Urungkan", "undo-local-delete", "text-button")}</div>`,
+      );
+  } else if (action === "offer")
+    openModal(renderOfferComposer(getListing(id)), "offer-modal");
+  else if (action === "delete-offer") {
+    deleteOfferDraft(id);
+    if (modal.open) modal.close();
+    render();
+    app
+      .querySelector("#main")
+      ?.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="undo-banner" role="status">Draf penawaran dihapus. ${button("Urungkan", "undo-buyer-delete", "text-button")}</div>`,
+      );
+  } else if (action === "undo-buyer-delete") {
+    undoBuyerDeletion();
+    render();
+    toast("Catatan dikembalikan.");
+  } else if (action === "delete-summary") {
+    deleteSummarySnapshot(id);
+    navigate("/tersimpan?view=ringkasan");
+    toast("Ringkasan dihapus. Kamu bisa mengurungkannya.");
+  } else if (action === "remove-from-collection") {
+    const c = readMarketState().collections.find((c) => c.id === id);
+    if (!c) return;
+    deletionUndo = { type: "collection", value: c };
+    removeFromCollection(id, el.dataset.listing);
+    render();
+    app
+      .querySelector("#main")
+      ?.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="undo-banner" role="status">Barang dihapus dari koleksi. ${button("Urungkan", "undo-local-delete", "text-button")}</div>`,
+      );
+  } else if (action === "undo-cart") {
+    addCart(id);
+    render();
+  } else if (action === "collection")
+    openModal(
+      `<form data-collection class="composer" novalidate><h2>Beri nama koleksimu</h2><p>${saved.length} pilihan tersimpan akan disalin ke koleksi.</p><label>Nama koleksi<input name="name" required maxlength="50" placeholder="Ruang tamu baru" aria-describedby="collection-error"></label><p id="collection-error" class="field-error" role="alert"></p><button type="submit" class="button">Simpan koleksi</button></form>`,
+      "collection-modal",
+    );
+  else if (action === "delete-collection") {
+    const c = readMarketState().collections.find((c) => c.id === id);
+    if (!c) return;
+    deletionUndo = { type: "collection", value: c };
+    deleteCollection(id);
+    render();
+    app
+      .querySelector("#main")
+      ?.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="undo-banner" role="status">Koleksi dihapus. ${button("Urungkan", "undo-local-delete", "text-button")}</div>`,
+      );
+  } else if (action === "undo-local-delete") {
+    if (deletionUndo?.type === "cart") addCart(deletionUndo.id);
+    else if (deletionUndo?.type === "collection")
+      saveCollection(deletionUndo.value.name, deletionUndo.value.ids);
+    deletionUndo = null;
+    render();
+    toast("Pilihan dikembalikan.");
+  } else if (action === "collection-compare") {
+    const c = readMarketState().collections.find((c) => c.id === id);
+    const ids = eligibleIds(c?.ids).filter((id) => cartEligible(id));
+    if (ids.length <= 3) {
+      compared = ids;
+      write(COMPARE_KEY, compared);
+      navigate("/bandingkan");
+    } else
+      openModal(
+        `<form data-collection-compare novalidate><h2>Pilih hingga tiga barang</h2><p>Koleksi ${esc(c.name)} berisi ${ids.length} barang. Pilih barang yang ingin dibandingkan.</p>${ids.map((id) => `<label class="check-row"><input type="checkbox" name="ids" value="${id}"><span>${esc(getListing(id).title)}</span></label>`).join("")}<p class="field-error" data-compare-error role="alert"></p><button type="submit" class="button">Bandingkan pilihan</button></form>`,
+        "collection-modal",
+      );
+  } else if (action === "remind") {
+    write("lihatdulu:reminders:v1", [...new Set([...reminders(), id])]);
+    el.textContent = "Minat tersimpan";
+    toast(savedFeedback("Minat disimpan") + " Tidak ada notifikasi otomatis.");
+  } else if (action === "save-summary") {
+    const state = readMarketState();
+    const result = saveSummarySnapshot(state.cart, state.checkout);
+    if (result.ok) {
+      navigate("/tersimpan?view=ringkasan&summary=" + result.record.id);
+      toast(
+        result.outcome === "device-persistent"
+          ? "Ringkasan tersimpan di perangkat ini."
+          : "Ringkasan hanya tersedia selama tab ini terbuka.",
+      );
+    } else toast("Ringkasan belum tersimpan. Periksa pilihanmu dan coba lagi.");
+  } else if (action === "photo-reset")
+    navigate(
+      preparedReferencePath(
+        parsePreparedReference(new URLSearchParams(location.search)),
+        { resetWidth: true },
+      ),
+      { results: true },
+    );
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  if (form.matches("[data-search]")) {
+    event.preventDefault();
+    if (form.dataset.composing === "true") return;
+    const f = currentFilters();
+    f.q = String(new FormData(form).get("q") || "")
+      .trim()
+      .slice(0, 120);
+    navigate(filterPath(f), { results: true });
+  } else if (form.matches("[data-filters]")) {
+    event.preventDefault();
+    const result = validateForm(form, { focus: true });
+    if (result.valid) {
+      if (!filtersEqual(result.filter, currentFilters()))
+        navigate(filterPath(result.filter), { results: true });
+      else if (modal.open) modal.close();
+    }
+  } else if (form.matches("[data-offer]")) {
+    event.preventDefault();
+    const fd = new FormData(form);
+    const result = saveOfferDraft(form.dataset.id, {
+      amount: fd.get("amount"),
+      note: fd.get("note"),
+    });
+    if (result.ok) {
+      form.dataset.dirty = "false";
+      modal.close();
+      render();
+      toast(
+        result.outcome === "device-persistent"
+          ? "Draf penawaran tersimpan di perangkat. Belum dikirim."
+          : "Draf tersedia selama tab ini terbuka. Belum dikirim.",
+      );
+    } else {
+      for (const name of ["amount", "note"]) {
+        const input = form.querySelector(`[name="${name}"]`);
+        const error = form.querySelector(`#offer-${name}-error`);
+        input?.setAttribute(
+          "aria-invalid",
+          result.errors?.[name] ? "true" : "false",
+        );
+        if (error) {
+          error.textContent = result.errors?.[name] || "";
+          error.hidden = !result.errors?.[name];
+        }
+      }
+      const error = form.querySelector("[data-offer-error]");
+      if (error) {
+        error.textContent = result.errors?.form || "";
+        error.hidden = !result.errors?.form;
+      }
+      form.querySelector('[aria-invalid="true"]')?.focus();
+    }
+  } else if (form.matches("[data-collection]")) {
+    event.preventDefault();
+    const input = form.querySelector('[name="name"]');
+    const name = input.value.trim();
+    const error = form.querySelector("#collection-error");
+    if (!name) {
+      error.textContent = "Beri nama koleksi terlebih dahulu.";
+      input.setAttribute("aria-invalid", "true");
+      input.focus();
+      return;
+    }
+    const existing = readMarketState().collections.find((c) => c.name === name);
+    if (existing && form.dataset.confirmName !== name) {
+      error.textContent = `Koleksi “${name}” sudah ada. Tekan Perbarui koleksi untuk mengganti isinya dengan ${saved.length} pilihan saat ini.`;
+      form.dataset.confirmName = name;
+      form.querySelector('[type="submit"]').textContent = "Perbarui koleksi";
+      return;
+    }
+    saveCollection(name, saved);
+    modal
+      .querySelector("[data-collection]")
+      ?.setAttribute("data-dirty", "false");
+    modal.close();
+    navigate("/tersimpan?view=koleksi");
+    toast(savedFeedback("Koleksi diperbarui", marketPersistenceStatus()));
+  } else if (form.matches("[data-collection-compare]")) {
+    event.preventDefault();
+    const ids = eligibleIds(new FormData(form).getAll("ids"));
+    if (!ids.length || ids.length > 3) {
+      form.querySelector("[data-compare-error]").textContent =
+        "Pilih satu hingga tiga barang.";
+      return;
+    }
+    compared = ids;
+    write(COMPARE_KEY, compared);
+    navigate("/bandingkan");
+  } else if (form.matches("[data-collection-members]")) {
+    event.preventDefault();
+    const c = readMarketState().collections.find(
+      (c) => c.id === form.dataset.id,
+    );
+    if (!c) return;
+    addToCollection(c.id, String(new FormData(form).get("listing") || ""));
+    render();
+    toast("Isi koleksi diperbarui.");
+  } else if (form.matches("[data-photo-limits]")) {
+    event.preventDefault();
+    const input = form.querySelector('[name="width"]');
+    const raw = input.value.trim();
+    const n = Number(raw);
+    if (
+      raw &&
+      (!/^\d+(?:\.\d+)?$/.test(raw) || !Number.isFinite(n) || n < 1 || n > 500)
+    ) {
+      input.setAttribute("aria-invalid", "true");
+      const error = form.querySelector("[data-width-error]");
+      if (error) {
+        error.textContent = "Gunakan lebar 1 hingga 500 cm.";
+        error.hidden = false;
+      }
+      input.focus();
+      return;
+    }
+    const state = parsePreparedReference(new URLSearchParams(location.search));
+    state.width = raw ? n : null;
+    navigate(preparedReferencePath(state), { results: true });
+  }
+});
+document.addEventListener("change", (event) => {
+  const el = event.target;
+  if (el.matches("[data-sort]")) {
+    const f = currentFilters();
+    f.sort = el.value;
+    navigate(filterPath(f), { results: true });
+  } else if (["fulfilment", "cart-delivery"].includes(el.name)) {
+    setCheckout({ delivery: el.value });
+    if (el.name === "cart-delivery") {
+      const y = scrollY;
+      render();
+      window.scrollTo(0, y);
+    } else {
+      const id = location.pathname.split("/")[2];
+      const panel = document.querySelector(".purchase-panel");
+      if (panel) {
+        panel.outerHTML = purchase(
+          getListing(id),
+          new URLSearchParams(location.search).get("preview") === "1",
+        );
+        const total = document.querySelector("[data-mobile-product-total]");
+        if (total)
+          total.textContent = formatPrice(
+            checkoutTotals([id], readMarketState().checkout).total,
+          );
+        document
+          .querySelector(`[name="fulfilment"][value="${el.value}"]`)
+          ?.focus({ preventScroll: true });
+      }
+    }
+  } else if (el.matches("[data-photo-source]")) {
+    const state = parsePreparedReference(new URLSearchParams(location.search));
+    state.source = el.value === "tala" ? "tala" : "arca";
+    navigate(preparedReferencePath(state), { results: true });
+  }
+});
+document.addEventListener("input", (event) => {
+  const el = event.target;
+  if (el.matches('[data-photo-limits] [name="width"]')) {
+    el.setAttribute("aria-invalid", "false");
+    const error = el.closest("form").querySelector("[data-width-error]");
+    if (error) {
+      error.textContent = "";
+      error.hidden = true;
+    }
+  }
+  const filters = el.closest("[data-filters]");
+  if (filters) updatePreview(filters);
+  const collection = el.closest("[data-collection]");
+  if (
+    collection &&
+    el.name === "name" &&
+    collection.dataset.confirmName !== el.value.trim()
+  ) {
+    delete collection.dataset.confirmName;
+    collection.querySelector('[type="submit"]').textContent = "Simpan koleksi";
+    collection.querySelector("#collection-error").textContent = "";
+    el.setAttribute("aria-invalid", "false");
+  }
+  const offer = el.closest("[data-offer]");
+  if (offer) {
+    offer.dataset.dirty = "true";
+    const parsed = parseRupiahInput(
+      offer.querySelector('[name="amount"]').value,
+    );
+    const preview = offer.querySelector("[data-offer-preview]");
+    if (preview)
+      preview.textContent =
+        parsed !== null && parsed > 0
+          ? "Nilai penawaran: " + formatPrice(parsed)
+          : "Masukkan nominal rupiah bulat.";
+    const count = offer.querySelector("[data-offer-note-count]");
+    if (count)
+      count.textContent = offer.querySelector('[name="note"]').value.length;
+  }
+  if (el.matches("[data-search] input, .header-search input")) {
+    const clear = el
+      .closest("form")
+      .querySelector('[data-action="clear-search"]');
+    if (clear) clear.hidden = !el.value;
+  }
+  if (el.tagName === "TEXTAREA") {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 280) + "px";
+  }
+});
+document.addEventListener("compositionstart", (event) => {
+  const form = event.target.closest("[data-search]");
+  if (form) form.dataset.composing = "true";
+});
+document.addEventListener("compositionend", (event) => {
+  const form = event.target.closest("[data-search]");
+  if (form) form.dataset.composing = "false";
+});
+modal.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  requestModalClose();
+});
+modal.addEventListener("close", () => {
+  document.body.classList.remove("modal-open");
+  const id = modal.dataset.photoId;
+  const host =
+    id && document.querySelector(`.photo-gallery[data-gallery-id="${id}"]`);
+  if (host) host.outerHTML = gallery(getListing(id));
+  delete modal.dataset.photoId;
+  if (modalTrigger?.isConnected) modalTrigger.focus({ preventScroll: true });
+  else if (id)
+    document.querySelector(".gallery-enlarge")?.focus({ preventScroll: true });
+  modalTrigger = null;
+});
+modal.addEventListener("keydown", (event) => {
+  if (event.key === "Tab") {
+    const focusable = [
+      ...modal.querySelectorAll(
+        'a[href],button:not(:disabled),input:not(:disabled):not([type="hidden"]),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])',
+      ),
+    ].filter(
+      (el) =>
+        !el.hidden &&
+        el.getClientRects().length &&
+        getComputedStyle(el).visibility !== "hidden",
+    );
+    const first = focusable[0],
+      last = focusable.at(-1);
+    if (!first) {
+      event.preventDefault();
+      modal.focus();
+      return;
+    }
+    if (
+      event.shiftKey &&
+      (document.activeElement === first ||
+        !modal.contains(document.activeElement))
+    ) {
+      event.preventDefault();
+      last.focus();
+    } else if (
+      !event.shiftKey &&
+      (document.activeElement === last ||
+        !modal.contains(document.activeElement))
+    ) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+  if (
+    !modal.dataset.photoId ||
+    !["ArrowLeft", "ArrowRight"].includes(event.key) ||
+    event.isComposing
+  )
+    return;
+  event.preventDefault();
+  const item = getListing(modal.dataset.photoId);
+  const n = galleryPositions.get(item.id) || 0;
+  galleryPositions.set(
+    item.id,
+    (n + (event.key === "ArrowRight" ? 1 : -1) + item.photos.length) %
+      item.photos.length,
+  );
+  paintPhotoModal(item.id);
+});
+modal.addEventListener("click", (event) => {
+  if (event.target !== modal) return;
+  const r = modal.getBoundingClientRect();
+  if (
+    event.clientX < r.left ||
+    event.clientX > r.right ||
+    event.clientY < r.top ||
+    event.clientY > r.bottom
+  )
+    requestModalClose();
+});
+document.addEventListener(
+  "error",
+  (event) => {
+    const img = event.target;
+    if (img.tagName !== "IMG" || img.dataset.failed) return;
+    img.dataset.failed = "1";
+    img.classList.add("failed-media");
+    const holder = img.parentElement;
+    if (
+      holder?.classList.contains("card-image") ||
+      holder?.classList.contains("gallery-main")
+    ) {
+      holder.classList.add("image-failure");
+      const note = document.createElement("span");
+      note.textContent =
+        "Gambar belum tersedia. Detail barang tetap bisa dibuka.";
+      holder.append(note);
+    }
+  },
+  true,
+);
+if (location.pathname.length > 1 && location.pathname.endsWith("/"))
+  history.replaceState(
+    history.state,
+    "",
+    location.pathname.replace(/\/+$/, "") + location.search + location.hash,
+  );
+history.scrollRestoration = "manual";
+window.addEventListener("popstate", () => {
+  if (modal.open) modal.close();
+  const top = history.state?.scrollY || 0;
+  render();
+  // Restore during the same navigation task. Warm-cache Back can complete
+  // before requestAnimationFrame, exposing the top of results for a frame.
+  window.scrollTo({ top, behavior: "instant" });
+});
+window.addEventListener("storage", (event) => {
+  if (
+    ![
+      SAVED_KEY,
+      COMPARE_KEY,
+      "lihatdulu:buyer-records:v1",
+      "lihatdulu:marketplace:v1",
+    ].includes(event.key) ||
+    modal.open
+  )
+    return;
+  saved = eligibleIds(read(SAVED_KEY, []));
+  compared = eligibleIds(read(COMPARE_KEY, []))
+    .filter((id) => cartEligible(id))
+    .slice(0, 3);
+  const y = scrollY;
+  render();
+  window.scrollTo(0, y);
+});
 render();
